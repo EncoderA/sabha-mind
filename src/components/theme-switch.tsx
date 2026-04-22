@@ -4,7 +4,6 @@ import {
   startTransition,
   useEffect,
   useEffectEvent,
-  useState,
 } from 'react';
 import { Moon, Sun } from 'lucide-react';
 

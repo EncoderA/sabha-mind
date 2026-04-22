@@ -173,7 +173,9 @@ export function MeetDebugCard({
     // ── Initial + periodic query ─────────────────────────────────────────
 
     useEffect(() => {
-        queryAllData();
+        queueMicrotask(() => {
+            void queryAllData();
+        });
     }, [queryAllData]);
 
     // ── Copy all data as JSON ────────────────────────────────────────────

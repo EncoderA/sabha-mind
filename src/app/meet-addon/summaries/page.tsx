@@ -2,62 +2,66 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronRight, FileText, Clock, Search } from 'lucide-react';
+import { ChevronRight, Clock, FileText, Search } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
-// Placeholder data — replace with actual API calls later
+const summaryDateFormatter = new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+});
+
+const summaryTimeFormatter = new Intl.DateTimeFormat('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+});
+
+// Placeholder data - replace with actual API calls later.
 const mockSummaries = [
     {
-        id: 'summary-1',
-        title: 'Weekly Sprint Planning',
         date: '2026-04-21T10:30:00',
         duration: '45 min',
+        id: 'summary-1',
         participantCount: 6,
-        preview: 'Discussed sprint goals, assigned tickets, and reviewed blockers from last week.',
+        preview:
+            'Discussed sprint goals, assigned tickets, and reviewed blockers from last week.',
+        title: 'Weekly Sprint Planning',
     },
     {
-        id: 'summary-2',
-        title: 'Product Roadmap Review',
         date: '2026-04-18T14:00:00',
         duration: '32 min',
+        id: 'summary-2',
         participantCount: 4,
-        preview: 'Reviewed Q2 roadmap priorities and realigned timelines for the auth integration.',
+        preview:
+            'Reviewed Q2 roadmap priorities and realigned timelines for the auth integration.',
+        title: 'Product Roadmap Review',
     },
     {
-        id: 'summary-3',
-        title: 'Design Sync — Add-on UI',
         date: '2026-04-16T11:00:00',
         duration: '22 min',
+        id: 'summary-3',
         participantCount: 3,
-        preview: 'Finalized the side panel layout, navigation patterns, and theme toggle placement.',
+        preview:
+            'Finalized the side panel layout, navigation patterns, and theme toggle placement.',
+        title: 'Design Sync - Add-on UI',
     },
-];
+] as const;
 
 function formatDate(dateStr: string) {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-    });
+    return summaryDateFormatter.format(new Date(dateStr));
 }
 
 function formatTime(dateStr: string) {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('en-IN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-    });
+    return summaryTimeFormatter.format(new Date(dateStr));
 }
 
 export default function SummariesPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
-    const filtered = mockSummaries.filter((s) =>
-        s.title.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = mockSummaries.filter((summary) =>
+        summary.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -65,11 +69,14 @@ export default function SummariesPage() {
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input
+                    aria-label="Search summaries"
+                    autoComplete="off"
+                    className="w-full rounded-lg border border-border/70 bg-muted/20 py-2 pl-9 pr-3 text-[13px] text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:bg-muted/30 focus-visible:border-primary/40 focus-visible:ring-3 focus-visible:ring-primary/15"
+                    name="summary-search"
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Search summaries…"
                     type="text"
-                    placeholder="Search summaries..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-lg border border-border/70 bg-muted/20 py-2 pl-9 pr-3 text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/40 focus:bg-muted/30"
                 />
             </div>
 
@@ -86,6 +93,7 @@ export default function SummariesPage() {
                 <div className="flex flex-col gap-2">
                     {filtered.map((summary) => (
                         <Link
+                            className="rounded-xl focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/15"
                             key={summary.id}
                             href={`/meet-addon/summaries/${summary.id}`}
                         >
@@ -107,10 +115,13 @@ export default function SummariesPage() {
                                         <div className="flex items-center gap-3 pt-0.5 text-[11px] text-muted-foreground/70">
                                             <span className="flex items-center gap-1">
                                                 <Clock className="size-3" />
-                                                {formatDate(summary.date)} · {formatTime(summary.date)}
+                                                {formatDate(summary.date)} -{' '}
+                                                {formatTime(summary.date)}
                                             </span>
                                             <span>{summary.duration}</span>
-                                            <span>{summary.participantCount} participants</span>
+                                            <span>
+                                                {summary.participantCount} participants
+                                            </span>
                                         </div>
                                     </div>
                                 </CardContent>

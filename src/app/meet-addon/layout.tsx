@@ -1,4 +1,5 @@
 import { AddonHeader } from '@/components/addon-header';
+import { MeetAddonProvider } from './meet-addon-provider';
 
 export default function MeetAddonLayout({
     children,
@@ -6,9 +7,11 @@ export default function MeetAddonLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex min-h-screen flex-col bg-background font-mono">
-            <AddonHeader />
-            <main className="flex flex-1 flex-col">{children}</main>
-        </div>
+        <MeetAddonProvider>
+            <div className="flex min-h-screen flex-col bg-background font-mono">
+                <AddonHeader />
+                <main className="flex flex-1 flex-col">{children}</main>
+            </div>
+        </MeetAddonProvider>
     );
 }

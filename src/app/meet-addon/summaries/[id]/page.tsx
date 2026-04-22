@@ -2,95 +2,117 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Clock, Users, FileText, ExternalLink } from 'lucide-react';
+import {
+    ArrowLeft,
+    Calendar,
+    Clock,
+    ExternalLink,
+    FileText,
+    Users,
+} from 'lucide-react';
 
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const mockSummaries: Record<string, {
-    title: string;
-    date: string;
-    duration: string;
-    participantCount: number;
-    participants: string[];
-    summary: string;
-    keyPoints: string[];
-    actionItems: string[];
-}> = {
+const summaryDateFormatter = new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    weekday: 'long',
+    year: 'numeric',
+});
+
+const summaryTimeFormatter = new Intl.DateTimeFormat('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+});
+
+const mockSummaries: Record<
+    string,
+    {
+        actionItems: string[];
+        date: string;
+        duration: string;
+        keyPoints: string[];
+        participantCount: number;
+        participants: string[];
+        summary: string;
+        title: string;
+    }
+> = {
     'summary-1': {
-        title: 'Weekly Sprint Planning',
-        date: '2026-04-21T10:30:00',
-        duration: '45 min',
-        participantCount: 6,
-        participants: ['Arjun S.', 'Priya K.', 'Rahul M.', 'Sneha D.', 'Vikram R.', 'Ananya P.'],
-        summary: 'The team discussed sprint goals for the upcoming week, reviewed outstanding tickets from the previous sprint, and identified potential blockers. Backend authentication integration was prioritized as the primary focus area.',
-        keyPoints: [
-            'Sprint velocity from last week was 34 points, slightly below target.',
-            'OAuth integration with Google is the top priority for this sprint.',
-            'Design review for the Meet add-on sidebar is complete.',
-            'Performance testing for the transcription pipeline should begin mid-week.',
-        ],
         actionItems: [
             'Arjun: Complete OAuth flow implementation by Wednesday.',
             'Priya: Finalize the summary card component designs.',
             'Rahul: Set up load testing environment for the transcription service.',
             'Sneha: Write integration tests for the Meet SDK initialization.',
         ],
+        date: '2026-04-21T10:30:00',
+        duration: '45 min',
+        keyPoints: [
+            'Sprint velocity from last week was 34 points, slightly below target.',
+            'OAuth integration with Google is the top priority for this sprint.',
+            'Design review for the Meet add-on sidebar is complete.',
+            'Performance testing for the transcription pipeline should begin mid-week.',
+        ],
+        participantCount: 6,
+        participants: [
+            'Arjun S.',
+            'Priya K.',
+            'Rahul M.',
+            'Sneha D.',
+            'Vikram R.',
+            'Ananya P.',
+        ],
+        summary:
+            'The team discussed sprint goals for the upcoming week, reviewed outstanding tickets from the previous sprint, and identified potential blockers. Backend authentication integration was prioritized as the primary focus area.',
+        title: 'Weekly Sprint Planning',
     },
     'summary-2': {
-        title: 'Product Roadmap Review',
+        actionItems: [
+            'Vikram: Update the project timeline in Jira.',
+            'Arjun: Prepare the security review documentation.',
+        ],
         date: '2026-04-18T14:00:00',
         duration: '32 min',
-        participantCount: 4,
-        participants: ['Arjun S.', 'Priya K.', 'Vikram R.', 'Manager N.'],
-        summary: 'Reviewed the Q2 roadmap and discussed timeline adjustments. The authentication module needs an additional week, pushing the public beta to the second week of May.',
         keyPoints: [
             'Public beta timeline shifted to May 12th.',
             'Meet add-on marketplace submission requires additional security review.',
             'Real-time collaboration features moved to Q3.',
         ],
-        actionItems: [
-            'Vikram: Update the project timeline in Jira.',
-            'Arjun: Prepare the security review documentation.',
-        ],
+        participantCount: 4,
+        participants: ['Arjun S.', 'Priya K.', 'Vikram R.', 'Manager N.'],
+        summary:
+            'Reviewed the Q2 roadmap and discussed timeline adjustments. The authentication module needs an additional week, pushing the public beta to the second week of May.',
+        title: 'Product Roadmap Review',
     },
     'summary-3': {
-        title: 'Design Sync — Add-on UI',
+        actionItems: [
+            'Priya: Export final design assets to Figma.',
+            'Sneha: Implement the addon header component.',
+        ],
         date: '2026-04-16T11:00:00',
         duration: '22 min',
-        participantCount: 3,
-        participants: ['Priya K.', 'Sneha D.', 'Ananya P.'],
-        summary: 'Finalized the side panel layout for the Meet add-on. Agreed on tab-based navigation with Home and Summaries sections. Theme toggle will be placed in the header alongside the website link.',
         keyPoints: [
             'Tab navigation with active indicator approved.',
             'Summary cards should show preview text, date, and participant count.',
             'Dark mode should persist across sessions using next-themes.',
         ],
-        actionItems: [
-            'Priya: Export final design assets to Figma.',
-            'Sneha: Implement the addon header component.',
-        ],
+        participantCount: 3,
+        participants: ['Priya K.', 'Sneha D.', 'Ananya P.'],
+        summary:
+            'Finalized the side panel layout for the Meet add-on. Agreed on tab-based navigation with Home and Summaries sections. Theme toggle will be placed in the header alongside the website link.',
+        title: 'Design Sync - Add-on UI',
     },
 };
 
 function formatDate(dateStr: string) {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-IN', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-    });
+    return summaryDateFormatter.format(new Date(dateStr));
 }
 
 function formatTime(dateStr: string) {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('en-IN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-    });
+    return summaryTimeFormatter.format(new Date(dateStr));
 }
 
 export default function SummaryDetailPage({
@@ -106,11 +128,12 @@ export default function SummaryDetailPage({
             <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4 text-center">
                 <FileText className="size-10 text-muted-foreground/30" />
                 <p className="text-[13px] text-muted-foreground">Summary not found.</p>
-                <Link href="/meet-addon/summaries">
-                    <Button variant="outline" size="sm">
-                        <ArrowLeft className="size-3.5" />
-                        Back to summaries
-                    </Button>
+                <Link
+                    href="/meet-addon/summaries"
+                    className={cn(buttonVariants({ size: 'sm', variant: 'outline' }))}
+                >
+                    <ArrowLeft className="size-3.5" />
+                    Back to summaries
                 </Link>
             </div>
         );
@@ -127,13 +150,18 @@ export default function SummaryDetailPage({
             </Link>
 
             <div className="space-y-2">
-                <div className='flex items-center gap-2 justify-between'>
-                    <h2 className="text-base font-semibold tracking-tight">{summary.title}</h2>
+                <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-base font-semibold tracking-tight">
+                        {summary.title}
+                    </h2>
                     <Link
                         href="https://sabha-mind.vercel.app"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-xs")}
+                        className={cn(
+                            buttonVariants({ size: 'sm', variant: 'outline' }),
+                            'text-xs'
+                        )}
                         title="Open Sabha Mind website"
                     >
                         <ExternalLink className="size-3" />
@@ -147,7 +175,7 @@ export default function SummaryDetailPage({
                     </span>
                     <span className="flex items-center gap-1">
                         <Clock className="size-3" />
-                        {formatTime(summary.date)} · {summary.duration}
+                        {formatTime(summary.date)} - {summary.duration}
                     </span>
                     <span className="flex items-center gap-1">
                         <Users className="size-3" />
@@ -169,7 +197,7 @@ export default function SummaryDetailPage({
 
             <Card className="border-border/60">
                 <CardContent className="p-3">
-                    <div className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground/70 uppercase">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
                         Summary
                     </div>
                     <p className="mt-2 text-[13px] leading-[1.6] text-foreground/90">
@@ -180,12 +208,15 @@ export default function SummaryDetailPage({
 
             <Card className="border-border/60">
                 <CardContent className="p-3">
-                    <div className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground/70 uppercase">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
                         Key Points
                     </div>
                     <ul className="mt-2 space-y-1.5">
-                        {summary.keyPoints.map((point, i) => (
-                            <li key={i} className="flex items-start gap-2 text-[12px] leading-[1.5] text-foreground/85">
+                        {summary.keyPoints.map((point, index) => (
+                            <li
+                                key={index}
+                                className="flex items-start gap-2 text-[12px] leading-[1.5] text-foreground/85"
+                            >
                                 <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary/60" />
                                 {point}
                             </li>
@@ -196,14 +227,17 @@ export default function SummaryDetailPage({
 
             <Card className="border-border/60">
                 <CardContent className="p-3">
-                    <div className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground/70 uppercase">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
                         Action Items
                     </div>
                     <ul className="mt-2 space-y-1.5">
-                        {summary.actionItems.map((item, i) => (
-                            <li key={i} className="flex items-start gap-2 text-[12px] leading-[1.5] text-foreground/85">
+                        {summary.actionItems.map((item, index) => (
+                            <li
+                                key={index}
+                                className="flex items-start gap-2 text-[12px] leading-[1.5] text-foreground/85"
+                            >
                                 <span className="mt-[5px] flex size-3.5 shrink-0 items-center justify-center rounded border border-border/70 text-[9px] text-muted-foreground">
-                                    {i + 1}
+                                    {index + 1}
                                 </span>
                                 {item}
                             </li>
