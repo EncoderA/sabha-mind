@@ -1,9 +1,44 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <div>Google meet add on</div>
-    </div>
-  );
+import { useEffect, useState } from 'react';
+import {
+    meet,
+    MeetSidePanelClient,
+} from '@googleworkspace/meet-addons/meet.addons';
+
+export default function Page() {
+    const [sidePanelClient, setSidePanelClient] = useState<MeetSidePanelClient>();
+
+    // Launches the main stage when the main button is clicked.
+    async function startActivity(e: unknown) {
+        if (!sidePanelClient) {
+            throw new Error('Side Panel is not yet initialized!');
+        }
+        await sidePanelClient.startActivity({
+            mainStageUrl: 'https://sabha-mind.vercel.app'
+        });
+    }
+
+    /**
+     * Prepares the add-on Side Panel Client.
+     */
+    useEffect(() => {
+        (async () => {
+            const session = await meet.addon.createAddonSession({
+                cloudProjectNumber: '882230198706',
+            });
+            setSidePanelClient(await session.createSidePanelClient());
+        })();
+    }, []);
+
+    return (
+        <>
+            <div>
+                This is the add-on Side Panel. Only you can see this.
+            </div>
+            <button onClick={startActivity}>
+                Launch Activity in Main Stage.
+            </button>
+        </>
+    );
 }
