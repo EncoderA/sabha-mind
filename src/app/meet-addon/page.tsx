@@ -5,7 +5,7 @@ import {
     meet,
     MeetSidePanelClient,
 } from '@googleworkspace/meet-addons/meet.addons';
-import { CircleDot, Keyboard, Mic } from 'lucide-react';
+import { CircleDot, Mic } from 'lucide-react';
 
 import { MeetDebugCard } from '@/components/meet-debug-card';
 
@@ -84,7 +84,7 @@ export default function MeetAddOnPage() {
     }, []);
 
     return (
-        <Card className="flex flex-col min-h-screen bg-background font-mono">
+        <Card className="flex flex-col min-h-[calc(100vh-89px)] bg-background font-mono rounded-none border-0">
             <CardHeader className="flex items-start justify-between gap-3 border-b border-border/70 pb-4">
                 <div className="min-w-0 space-y-2">
                     <div className="flex items-start gap-3">
@@ -135,11 +135,11 @@ export default function MeetAddOnPage() {
                     </div>
                 ) : null}
 
-                {/* 🧪 TEMPORARY — Remove after testing */}
-                <MeetDebugCard sidePanelClient={sidePanelClient} />
+                {/* testing */}
+                {/* <MeetDebugCard sidePanelClient={sidePanelClient} /> */}
             </CardContent>
 
-            <CardFooter className="mt-auto flex flex-col gap-2 border-t border-border/70 pt-4">
+            <CardFooter className="mt-auto flex flex-col gap-2 border-t border-border/70 rounded-none pt-4">
                 <Button
                     className="w-full"
                     size="lg"

@@ -22,11 +22,11 @@ export function ThemeSwitch({
   enableShortcut?: boolean;
 }) {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  // const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // useEffect(() => {
+  //   setMounted(true);
+  // }, []);
 
   const isDark = resolvedTheme === 'dark';
   const ThemeIcon = isDark ? Sun : Moon;
@@ -83,11 +83,14 @@ export function ThemeSwitch({
         className
       )}
       aria-label={
-        mounted
-          ? isDark
+        // mounted
+        //   ? isDark
+        //     ? 'Switch to light theme'
+        //     : 'Switch to dark theme'
+        //   : 'Toggle theme'
+        isDark
             ? 'Switch to light theme'
             : 'Switch to dark theme'
-          : 'Toggle theme'
       }
       title={
         enableShortcut
@@ -99,7 +102,8 @@ export function ThemeSwitch({
         suppressHydrationWarning
         className="flex size-4 items-center justify-center"
       >
-        {mounted ? <ThemeIcon className="size-4" /> : null}
+        {/* {mounted ? <ThemeIcon className="size-4" /> : null} */}
+        <ThemeIcon className="size-4" />
       </span>
     </Button>
   );
