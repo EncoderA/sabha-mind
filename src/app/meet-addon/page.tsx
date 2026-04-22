@@ -6,7 +6,14 @@ import {
   meet,
   MeetSidePanelClient,
 } from '@googleworkspace/meet-addons/meet.addons';
-import { ArrowLeft, Keyboard, Mic, Radio } from 'lucide-react';
+import {
+  ArrowLeft,
+  CircleDot,
+  Keyboard,
+  Mic,
+  Radio,
+  Sparkles,
+} from 'lucide-react';
 
 import { ThemeSwitch } from '@/components/theme-switch';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -90,60 +97,87 @@ export default function MeetAddOnPage() {
   }, []);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-sm border border-border/70 bg-background shadow-lg">
-        <CardHeader className="gap-4 border-b">
+    <main className="min-h-screen bg-muted/20 p-2">
+      <Card
+        size="sm"
+        className="min-h-[calc(100vh-1rem)] border-border/70 bg-background shadow-sm"
+      >
+        <CardHeader className="gap-3 border-b">
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-3">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-primary/15 text-foreground">
-                <Mic className="size-5" />
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+                <Mic className="size-4" />
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                <Radio className="size-3.5" />
-                Meet add-on
+              <div className="min-w-0 space-y-1">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">
+                  <Radio className="size-3" />
+                  Meet side panel
+                </div>
+                <CardTitle className="text-sm">Start Recording</CardTitle>
+                <CardDescription className="text-[13px] leading-5">
+                  Launch Sabha Mind from the Google Meet sidebar.
+                </CardDescription>
               </div>
             </div>
-            <ThemeSwitch enableShortcut />
-          </div>
-          <div className="space-y-1">
-            <CardTitle>Start Recording</CardTitle>
-            <CardDescription>
-              Open the Sabha Mind recording stage for this meeting from the side
-              panel.
-            </CardDescription>
+            <ThemeSwitch enableShortcut className="size-8" />
           </div>
         </CardHeader>
-        <CardContent className="space-y-3 pt-4">
-          <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-            {statusMessage}
+
+        <CardContent className="flex flex-1 flex-col gap-3 pt-3">
+          <div className="rounded-xl border border-border/60 bg-muted/35 p-3">
+            <div className="flex items-center gap-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+              <CircleDot className="size-3.5 text-primary" />
+              Session status
+            </div>
+            <p className="mt-2 text-[13px] leading-5 text-foreground">
+              {statusMessage}
+            </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/40 p-3 text-sm text-muted-foreground">
-            <Keyboard className="size-4 text-primary" />
-            Press <span className="font-semibold text-foreground">D</span> to
-            switch dark mode from the side panel.
+
+          <div className="grid gap-2">
+            <div className="rounded-lg border border-border/60 bg-background p-3">
+              <div className="flex items-start gap-2">
+                <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
+                <div className="space-y-1">
+                  <p className="text-[13px] font-medium">Built for live calls</p>
+                  <p className="text-[12px] leading-5 text-muted-foreground">
+                    Start recording here, then continue in the main stage without
+                    leaving the meeting flow.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-background p-3">
+              <div className="flex items-start gap-2">
+                <Keyboard className="mt-0.5 size-4 shrink-0 text-primary" />
+                <div className="space-y-1">
+                  <p className="text-[13px] font-medium">Quick theme toggle</p>
+                  <p className="text-[12px] leading-5 text-muted-foreground">
+                    Press <span className="font-semibold text-foreground">D</span>{' '}
+                    to switch dark mode without reaching for the header button.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
+
           {errorMessage ? (
-            <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-[13px] leading-5 text-destructive">
               {errorMessage}
             </div>
           ) : null}
         </CardContent>
-        <CardFooter className="flex-col items-stretch gap-3 sm:flex-row">
+
+        <CardFooter className="mt-auto flex-col items-stretch gap-2 border-t bg-background">
           <Button
-            className="flex-1"
+            className="w-full"
             size="lg"
             onClick={startRecording}
             disabled={!isReady || isPending}
           >
             {isPending ? 'Starting Recording...' : 'Start Recording'}
           </Button>
-          <Link
-            href="/"
-            className={buttonVariants({ variant: 'outline', size: 'lg' })}
-          >
-            <ArrowLeft className="size-4" />
-            Back
-          </Link>
         </CardFooter>
       </Card>
     </main>
