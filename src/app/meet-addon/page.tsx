@@ -7,6 +7,8 @@ import {
 } from '@googleworkspace/meet-addons/meet.addons';
 import { CircleDot, Keyboard, Mic } from 'lucide-react';
 
+import { MeetDebugCard } from '@/components/meet-debug-card';
+
 import { ThemeSwitch } from '@/components/theme-switch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -132,6 +134,9 @@ export default function MeetAddOnPage() {
                         {errorMessage}
                     </div>
                 ) : null}
+
+                {/* 🧪 TEMPORARY — Remove after testing */}
+                <MeetDebugCard sidePanelClient={sidePanelClient} />
             </CardContent>
 
             <CardFooter className="mt-auto flex flex-col gap-2 border-t border-border/70 pt-4">

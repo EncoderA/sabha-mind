@@ -4,7 +4,7 @@ import {
   startTransition,
   useEffect,
   useEffectEvent,
-  useSyncExternalStore,
+  useState,
 } from 'react';
 import { Moon, Sun } from 'lucide-react';
 
@@ -14,7 +14,6 @@ import { useTheme } from 'next-themes';
 
 const editableTags = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
-
 export function ThemeSwitch({
   className,
   enableShortcut = true,
@@ -22,10 +21,14 @@ export function ThemeSwitch({
   className?: string;
   enableShortcut?: boolean;
 }) {
-  const { themes, resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  const currentTheme = themes ? resolvedTheme : 'light';
-  const isDark = currentTheme === 'dark';
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDark = resolvedTheme === 'dark';
   const ThemeIcon = isDark ? Sun : Moon;
 
   const toggleTheme = () => {
@@ -79,7 +82,13 @@ export function ThemeSwitch({
         'rounded-full border-border/70 bg-background/75 shadow-sm backdrop-blur-sm',
         className
       )}
-      aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      aria-label={
+        mounted
+          ? isDark
+            ? 'Switch to light theme'
+            : 'Switch to dark theme'
+          : 'Toggle theme'
+      }
       title={
         enableShortcut
           ? 'Toggle theme. Press D to switch dark mode.'
@@ -90,7 +99,7 @@ export function ThemeSwitch({
         suppressHydrationWarning
         className="flex size-4 items-center justify-center"
       >
-        <ThemeIcon className="size-4" />
+        {mounted ? <ThemeIcon className="size-4" /> : null}
       </span>
     </Button>
   );
