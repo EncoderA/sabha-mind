@@ -14,7 +14,7 @@ export default function Home() {
       <section className="w-full max-w-3xl rounded-[2rem] border border-border/60 bg-background p-8 shadow-xl">
         <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
           <div className="max-w-xl space-y-5">
-            <div className="inline-flex items-center gap-3 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary">
+            <div className="inline-flex items-center font-mono gap-3 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary">
               <AudioLines className="size-4" />
               Sabha Mind
             </div>

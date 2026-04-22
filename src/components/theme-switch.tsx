@@ -4,24 +4,27 @@ import {
   startTransition,
   useEffect,
   useEffectEvent,
+  useSyncExternalStore,
 } from 'react';
 import { Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
 
 const editableTags = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
+
 export function ThemeSwitch({
   className,
-  enableShortcut = false,
+  enableShortcut = true,
 }: {
   className?: string;
   enableShortcut?: boolean;
 }) {
-  const { resolvedTheme, setTheme } = useTheme();
-  const currentTheme = resolvedTheme ?? 'light';
+  const { themes, resolvedTheme, setTheme } = useTheme();
+
+  const currentTheme = themes ? resolvedTheme : 'light';
   const isDark = currentTheme === 'dark';
   const ThemeIcon = isDark ? Sun : Moon;
 
