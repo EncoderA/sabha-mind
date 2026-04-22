@@ -85,7 +85,7 @@ export default function MeetAddOnPage() {
 
     return (
         <Card className="flex flex-col min-h-[calc(100vh-89px)] bg-background font-mono rounded-none border-0">
-            <CardHeader className="flex items-start justify-between gap-3 border-b border-border/70 pb-4">
+            {/* <CardHeader className="flex items-start justify-between gap-3 border-b border-border/70 pb-4">
                 <div className="min-w-0 space-y-2">
                     <div className="flex items-start gap-3">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-foreground">
@@ -103,9 +103,9 @@ export default function MeetAddOnPage() {
                     </div>
                 </div>
                 <ThemeSwitch enableShortcut className="size-8 shrink-0" />
-            </CardHeader>
+            </CardHeader> */}
 
-            <CardContent className="flex flex-1 flex-col gap-3 py-4">
+            <CardContent className="flex flex-1 flex-col gap-3">
                 <div className="rounded-lg border border-border/70 bg-muted/25 p-3">
                     <div className="flex items-center gap-2 text-[11px] font-medium tracking-[0.16em] text-muted-foreground uppercase">
                         <CircleDot className="size-3.5 text-foreground/70" />
