@@ -1,73 +1,32 @@
-// "use client";
-
-// import { useState } from "react";
-// import { loginUser } from "@/lib/api";
-
-// export default function LoginPage() {
-//   const [email, setEmail] = useState("");
-//   const [password, setPassword] = useState("");
-
-//   const handleLogin = async () => {
-//     const data = await loginUser(email, password);
-
-//     if (data.accessToken) {
-//       localStorage.setItem("accessToken", data.accessToken);
-//       localStorage.setItem("refreshToken", data.refreshToken);
-
-//       alert("Login successful");
-//     } else {
-//       alert(data.error || "Login failed");
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <h2>Login</h2>
-
-//       <input
-//         placeholder="Email"
-//         onChange={(e) => setEmail(e.target.value)}
-//       />
-
-//       <input
-//         type="password"
-//         placeholder="Password"
-//         onChange={(e) => setPassword(e.target.value)}
-//       />
-
-//       <button onClick={handleLogin}>Login</button>
-//     </div>
-//   );
-// }
-
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { loginUser, initiateGoogleLogin } from "@/lib/api";
+import { registerUser, initiateGoogleLogin } from "@/lib/api";
 import { AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     try {
       setLoading(true);
       setError("");
+      setSuccess("");
 
-      const data = await loginUser(email, password);
+      const data = await registerUser(email, password);
 
-      if (data.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-
-        window.location.href = "/meet-addon/summaries";
+      if (data.message) {
+        setSuccess("Registered successfully");
+        setEmail("");
+        setPassword("");
       } else {
-        setError(data.error || "Login failed");
+        setError(data.error || "Registration failed");
       }
     } catch {
       setError("Something went wrong");
@@ -76,7 +35,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleSignup = () => {
     initiateGoogleLogin();
   };
 
@@ -93,18 +52,18 @@ export default function LoginPage() {
 
           {/* Heading */}
           <CardTitle className="text-3xl font-bold font-heading text-center">
-            Welcome Back
+            Create Account
           </CardTitle>
 
           <CardDescription className="text-center">
-            Login to continue to Sabha Mind
+            Register to continue to Sabha Mind
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-5">
-          {/* Google Login Button */}
+          {/* Google Signup Button */}
           <Button
-            onClick={handleGoogleLogin}
+            onClick={handleGoogleSignup}
             variant="outline"
             className="w-full"
             size="lg"
@@ -179,14 +138,21 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Success */}
+          {success && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm rounded-xl px-4 py-3">
+              {success}
+            </div>
+          )}
+
           {/* Button */}
           <Button
-            onClick={handleLogin}
+            onClick={handleRegister}
             disabled={loading}
             className="w-full"
             size="lg"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Creating Account..." : "Register"}
           </Button>
 
           <Button
@@ -200,12 +166,12 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="text-muted-foreground text-sm text-center">
-            Don&apos;t have an account?{" "}
+            Already have an account?{" "}
             <Link
-              href="/register"
+              href="/login"
               className="text-primary hover:text-primary/80 transition"
             >
-              Register
+              Login
             </Link>
           </p>
         </CardContent>

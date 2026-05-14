@@ -32,7 +32,7 @@ export function MeetAddonProvider({ children }: { children: ReactNode }) {
         useState<MeetSidePanelClient | null>(null);
     const [isReady, setIsReady] = useState(false);
     const [statusMessage, setStatusMessage] = useState(
-        'Connecting to the Meet side panel…'
+        'Connecting to the Meet side panel...'
     );
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
