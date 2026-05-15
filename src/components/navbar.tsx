@@ -19,7 +19,7 @@ import { ThemeSwitch } from "@/components/theme-switch";
 const navItems = [
   { name: "Platform", link: "#platform" },
   { name: "Workflow", link: "#workflow" },
-  { name: "Add-on", link: "/meet-addon" },
+  { name: "Add-on", link: "/meet-addon/summaries" },
 ] as const;
 
 export default function Navbar() {

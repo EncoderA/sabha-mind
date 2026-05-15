@@ -138,13 +138,11 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from "next/navigation";
 import { ChevronRight, Clock, FileText, Search } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
 const summaryDateFormatter = new Intl.DateTimeFormat('en-IN', {
     day: 'numeric',
@@ -199,16 +197,6 @@ function formatTime(dateStr: string) {
 
 export default function SummariesPage() {
 
-    const router = useRouter();
-
-    useEffect(() => {
-        const token = localStorage.getItem("accessToken");
-
-        if (!token) {
-            router.push("/login");
-        }
-    }, [router]);
-
     const [searchQuery, setSearchQuery] = useState('');
 
     const filtered = mockSummaries.filter((summary) =>
@@ -217,19 +205,6 @@ export default function SummariesPage() {
 
     return (
         <div className="flex flex-1 flex-col gap-3 p-4">
-            <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                    localStorage.removeItem("accessToken");
-                    localStorage.removeItem("refreshToken");
-                    router.push("/login");
-                }}
-                className="self-end"
-            >
-                Logout
-            </Button>
-
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <input
