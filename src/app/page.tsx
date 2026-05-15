@@ -87,7 +87,7 @@ export default function Home() {
 
       <main className="min-h-screen overflow-x-hidden bg-background text-foreground">
         <section className="border-b border-border/70 bg-muted/20 ">
-          <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.02fr_0.98fr] lg:px-8 lg:py-24">
+          <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.02fr_0.98fr] lg:px-8 lg:py-24 items-center">
             <div className="flex min-w-0 flex-col justify-center">
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/70 bg-background px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
                 <AudioLines className="size-3.5 text-primary" aria-hidden="true" />
