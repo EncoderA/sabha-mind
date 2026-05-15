@@ -56,7 +56,7 @@ export default function RegisterPage() {
           </CardTitle>
 
           <CardDescription className="text-center">
-            Register to continue to Sabha Mind
+            Register to continue to VartaIQ
           </CardDescription>
         </CardHeader>
 

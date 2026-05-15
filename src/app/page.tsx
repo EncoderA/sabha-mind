@@ -95,7 +95,7 @@ export default function Home() {
               </div>
 
               <h1 className="mt-6 max-w-4xl text-balance font-heading text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                SabhaMind turns live meetings into accountable decisions.
+                VartaIQ turns live meetings into accountable decisions.
               </h1>
 
               <p className="mt-5 max-w-2xl text-pretty text-base leading-8 text-muted-foreground sm:text-lg">
@@ -257,7 +257,7 @@ export default function Home() {
                 From conversation to follow-through in 3 steps.
               </h2>
               <p className="mt-4 text-pretty text-sm leading-7 text-muted-foreground">
-                SabhaMind keeps the operational flow simple: capture the call,
+                VartaIQ keeps the operational flow simple: capture the call,
                 structure the important details, and give every stakeholder a
                 clean source of truth.
               </p>

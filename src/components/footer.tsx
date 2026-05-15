@@ -13,7 +13,7 @@ export default function Footer() {
       <div className="mx-auto grid max-w-7xl gap-12 px-8 py-14 md:grid-cols-3">
         <div>
           <h2 className="font-heading text-2xl font-bold">
-            Sabha<span className="text-primary">Mind</span>
+            Varta<span className="text-primary">IQ</span>
           </h2>
 
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
@@ -66,7 +66,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t py-5 text-center text-sm text-muted-foreground">
-        Copyright 2026 SabhaMind. All rights reserved.
+        Copyright 2026 VartaIQ. All rights reserved.
       </div>
     </footer>
   );

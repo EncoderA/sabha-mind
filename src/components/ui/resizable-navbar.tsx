@@ -200,7 +200,7 @@ export const NavbarLogo = () => {
         <AudioLines className="size-4" aria-hidden="true" />
       </span>
       <span className="truncate font-heading text-base font-semibold">
-        Sabha<span className="text-primary">Mind</span>
+        Varta<span className="text-primary">IQ</span>
       </span>
     </Link>
   );

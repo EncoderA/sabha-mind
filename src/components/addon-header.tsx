@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ExternalLink, Home, ScrollText, Mic } from 'lucide-react';
 
-// import { ThemeSwitch } from '@/components/theme-switch';
+import { ThemeSwitch } from '@/components/theme-switch';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from './ui/button';
 
@@ -44,16 +44,16 @@ export function AddonHeader() {
                 </div>
                 <div className="flex items-center gap-1.5">
                     <Link
-                        href="https://sabha-mind.vercel.app"
+                        href="https://vartaiq.vercel.app"
                         target="_blank"
                         rel="noopener noreferrer"
                         className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-xs text-foreground/70")}
-                        title="Open Sabha Mind website"
+                        title="Open VartaIQ website"
                     >
                         <ExternalLink className="size-3" />
                         Website
                     </Link>
-                    {/* <ThemeSwitch enableShortcut className="size-7 shrink-0" /> */}
+                    <ThemeSwitch enableShortcut className="size-7 shrink-0" />
                 </div>
             </div>
             <nav className="flex gap-0.5 px-3" aria-label="Add-on navigation">

@@ -65,7 +65,7 @@ export default function LoginPage() {
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
 
-        window.location.href = "/meet-addon/summaries";
+        // window.location.href = "/meet-addon/summaries"; // redirect disabled
       } else {
         setError(data.error || "Login failed");
       }
@@ -97,7 +97,7 @@ export default function LoginPage() {
           </CardTitle>
 
           <CardDescription className="text-center">
-            Login to continue to Sabha Mind
+            Login to continue to VartaIQ
           </CardDescription>
         </CardHeader>
 

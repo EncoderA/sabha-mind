@@ -54,7 +54,7 @@ export function MeetAddonProvider({ children }: { children: ReactNode }) {
                 setSidePanelClient(client);
                 setIsReady(true);
                 setStatusMessage(
-                    'Ready to launch the Sabha Mind recording workspace.'
+                    'Ready to launch the VartaIQ recording workspace.'
                 );
             } catch (error) {
                 if (!isMounted) {

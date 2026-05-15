@@ -155,14 +155,14 @@ export default function SummaryDetailPage({
                         {summary.title}
                     </h2>
                     <Link
-                        href="https://sabha-mind.vercel.app"
+                        href="https://vartaiq.vercel.app"
                         target="_blank"
                         rel="noopener noreferrer"
                         className={cn(
                             buttonVariants({ size: 'sm', variant: 'outline' }),
                             'text-xs'
                         )}
-                        title="Open Sabha Mind website"
+                        title="Open VartaIQ website"
                     >
                         <ExternalLink className="size-3" />
                         Open Full Summary

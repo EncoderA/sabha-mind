@@ -14,6 +14,7 @@ import {
   NavbarButton,
   NavbarLogo,
 } from "@/components/ui/resizable-navbar";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 const navItems = [
   { name: "Platform", link: "#platform" },
@@ -34,6 +35,7 @@ export default function Navbar() {
         <NavbarLogo />
         <NavItems items={[...navItems]} />
         <div className="relative z-20 flex items-center gap-2">
+          <ThemeSwitch enableShortcut={false} className="size-9" />
           <NavbarButton as={Link} href="/login" variant="secondary">
             Sign In
           </NavbarButton>
@@ -82,6 +84,9 @@ export default function Navbar() {
             >
               Start Free
             </NavbarButton>
+            <div className="flex justify-center pt-1">
+              <ThemeSwitch enableShortcut={false} />
+            </div>
           </div>
         </MobileNavMenu>
       </MobileNav>

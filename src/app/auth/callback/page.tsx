@@ -146,7 +146,7 @@ function GoogleCallbackContent() {
         setStatus("error");
         setMessage("Authentication failed. Please try again.");
       });
-      setTimeout(() => router.push("/login"), 3000);
+      // setTimeout(() => router.push("/login"), 3000); // redirect disabled
       return;
     }
 
@@ -155,7 +155,7 @@ function GoogleCallbackContent() {
         setStatus("error");
         setMessage("No authorization code received.");
       });
-      setTimeout(() => router.push("/login"), 3000);
+      // setTimeout(() => router.push("/login"), 3000); // redirect disabled
       return;
     }
 
@@ -166,21 +166,21 @@ function GoogleCallbackContent() {
           localStorage.setItem("refreshToken", data.refreshToken);
 
           setStatus("success");
-          setMessage("Login successful! Redirecting...");
+          setMessage("Login successful!");
 
-          setTimeout(() => {
-            window.location.href = "/meet-addon/summaries";
-          }, 1500);
+          // setTimeout(() => {
+          //   window.location.href = "/meet-addon/summaries"; // redirect disabled
+          // }, 1500);
         } else {
           setStatus("error");
           setMessage(data.error || "Authentication failed");
-          setTimeout(() => router.push("/login"), 3000);
+          // setTimeout(() => router.push("/login"), 3000); // redirect disabled
         }
       })
       .catch(() => {
         setStatus("error");
         setMessage("Something went wrong. Please try again.");
-        setTimeout(() => router.push("/login"), 3000);
+        // setTimeout(() => router.push("/login"), 3000); // redirect disabled
       });
   }, [searchParams, router]);
 
