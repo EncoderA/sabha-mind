@@ -65,6 +65,7 @@ export default function MeetAddOnPage() {
         errorMessage: meetErrorMessage,
         isPending: isMeetPending,
         isReady,
+        sidePanelClient,
         startRecording: openMeetWorkspace,
         statusMessage: meetStatusMessage,
     } = useMeetAddon();
@@ -188,6 +189,44 @@ export default function MeetAddOnPage() {
             isMounted = false;
         };
     }, []);
+
+    // Fetch the actual meeting URL from the Google Meet Add-on API
+    useEffect(() => {
+        if (!sidePanelClient) {
+            return;
+        }
+
+        let isMounted = true;
+
+        async function fetchMeetingInfo() {
+            try {
+                if (!sidePanelClient) {
+                    return;
+                }
+
+                const meetingInfo = await sidePanelClient.getMeetingInfo();
+
+                if (!isMounted) {
+                    return;
+                }
+
+                if (meetingInfo?.meetingCode) {
+                    // Construct the actual meeting URL from the meeting code
+                    const actualMeetUrl = `https://meet.google.com/${meetingInfo.meetingCode}`;
+                    setMeetUrl(actualMeetUrl);
+                }
+            } catch (error) {
+                // If we can't get the meeting info, keep using the default URL
+                console.error('Failed to fetch meeting info:', error);
+            }
+        }
+
+        void fetchMeetingInfo();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [sidePanelClient]);
 
     return (
         <div className="flex flex-1 flex-col gap-3 bg-background p-3 font-mono">
