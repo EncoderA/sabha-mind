@@ -20,6 +20,7 @@ const navItems = [
   { name: "Platform", link: "#platform" },
   { name: "Workflow", link: "#workflow" },
   { name: "Add-on", link: "/meet-addon/summaries" },
+  { name: "AI-Summary", link: "/meetings"}
 ] as const;
 
 export default function Navbar() {

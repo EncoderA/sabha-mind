@@ -1,3 +1,10 @@
+import axios from "axios";
+
+const API = axios.create({
+  baseURL: "http://127.0.0.1:8000",
+});
+
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const USE_MOCK_AUTH = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
 
@@ -125,3 +132,5 @@ export async function handleGoogleCallback(code: string) {
     refreshToken: "",
   };
 }
+
+export default API;
