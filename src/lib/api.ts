@@ -1,11 +1,13 @@
 import axios from "axios";
 
+const PUBLIC_IP = process.env.NEXT_PUBLIC_PUBLIC_IP || "127.0.0.1";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || `http://${PUBLIC_IP}:8000`;
+
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000",
+  baseURL: BACKEND_URL,
 });
 
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || BACKEND_URL;
 const USE_MOCK_AUTH = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
 
 export type Recording = {
