@@ -135,4 +135,49 @@ export async function handleGoogleCallback(code: string) {
   };
 }
 
+// Backend Integration APIs
+
+export async function submitMeetingLink(url: string) {
+  const res = await fetch(`${BASE_URL}/submit-link`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ url }),
+  });
+  return res.json();
+}
+
+export async function submitBotDoneSignal(jobId: string, meetingId: string) {
+  const res = await fetch(`${BASE_URL}/bot-done`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ jobId, meetingId }),
+  });
+  return res.json();
+}
+
+export async function getAllTranscripts() {
+  const res = await fetch(`${BASE_URL}/transcripts`, {
+    method: "GET",
+  });
+  return res.json();
+}
+
+export async function getMeetingTranscript(meetingId: string) {
+  const res = await fetch(`${BASE_URL}/meeting-transcript/${meetingId}`, {
+    method: "GET",
+  });
+  return res.json();
+}
+
+export async function getTranscriptDirect(meetingId: string) {
+  const res = await fetch(`${BASE_URL}/transcript/${meetingId}`, {
+    method: "GET",
+  });
+  return res.json();
+}
+
 export default API;
