@@ -1,7 +1,6 @@
 const RECORDING_API_BASE_URL =
   process.env.RECORDING_API_URL ??
-  process.env.NEXT_PUBLIC_RECORDING_API_URL ??
-  "http://65.2.158.83:5000";
+  process.env.NEXT_PUBLIC_RECORDING_API_URL;
 
 type ProxyOptions = {
   body?: unknown;

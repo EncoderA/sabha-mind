@@ -1,24 +1,21 @@
 import axios from "axios";
 
+import type {
+  BotDonePayload,
+  SubmitLinkResponse,
+  TranscriptListItem,
+} from "@/lib/bot-api";
+
 const PUBLIC_IP = process.env.NEXT_PUBLIC_PUBLIC_IP || "127.0.0.1";
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || `http://${PUBLIC_IP}:8000`;
+const AUTH_BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL || `http://${PUBLIC_IP}:8000`;
 
 const API = axios.create({
-  baseURL: BACKEND_URL,
+  baseURL: AUTH_BACKEND_URL,
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || BACKEND_URL;
+const BASE_URL = AUTH_BACKEND_URL;
 const USE_MOCK_AUTH = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
-
-export type Recording = {
-  id?: string;
-  recordingId?: string;
-  meetUrl?: string;
-  status?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  [key: string]: unknown;
-};
 
 type RequestOptions = {
   body?: unknown;
@@ -84,31 +81,6 @@ export async function loginUser(email: string, password: string) {
   return res.json();
 }
 
-export function startRecording(meetUrl: string) {
-  return requestJson<Recording>("/recordings/start", {
-    method: "POST",
-    body: { meetUrl },
-  });
-}
-
-export function getRecordingStatus(recordingId: string) {
-  return requestJson<Recording>(`/recordings/${recordingId}/status`);
-}
-
-export function stopRecording(recordingId: string) {
-  return requestJson<Recording>(`/recordings/${recordingId}/stop`, {
-    method: "POST",
-  });
-}
-
-export function listRecordings() {
-  return requestJson<Recording[] | { recordings: Recording[] }>("/recordings");
-}
-
-export function checkRecordingApiHealth() {
-  return requestJson<Record<string, unknown>>("/health");
-}
-
 export function initiateGoogleLogin() {
   if (USE_MOCK_AUTH) {
     window.location.href = "/api/auth/google";
@@ -135,49 +107,58 @@ export async function handleGoogleCallback(code: string) {
   };
 }
 
-// Backend Integration APIs
+// Recording bot APIs via Next.js proxy (avoids CORS in Meet add-on iframe)
+export type { BotDonePayload, SubmitLinkResponse, TranscriptListItem } from "@/lib/bot-api";
 
-export async function submitMeetingLink(url: string) {
-  const res = await fetch(`${BASE_URL}/submit-link`, {
+export function submitMeetingLink(url: string) {
+  return requestJson<SubmitLinkResponse>("/api/submit-link", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ url }),
+    body: { url },
   });
-  return res.json();
 }
 
-export async function submitBotDoneSignal(jobId: string, meetingId: string) {
-  const res = await fetch(`${BASE_URL}/bot-done`, {
+export function submitBotDoneSignal(jobId: string, meetingId: string) {
+  return requestJson<Record<string, unknown>>("/api/bot-done", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ jobId, meetingId }),
+    body: { jobId, meetingId } satisfies BotDonePayload,
   });
-  return res.json();
 }
 
-export async function getAllTranscripts() {
-  const res = await fetch(`${BASE_URL}/transcripts`, {
-    method: "GET",
-  });
-  return res.json();
+export function getAllTranscripts() {
+  return requestJson<TranscriptListItem[] | Record<string, unknown>>(
+    "/api/transcripts"
+  );
 }
 
-export async function getMeetingTranscript(meetingId: string) {
-  const res = await fetch(`${BASE_URL}/meeting-transcript/${meetingId}`, {
-    method: "GET",
-  });
-  return res.json();
+export function getMeetingTranscript(meetingId: string) {
+  return requestJson<Record<string, unknown>>(
+    `/api/meeting-transcript/${encodeURIComponent(meetingId)}`
+  );
 }
 
 export async function getTranscriptDirect(meetingId: string) {
-  const res = await fetch(`${BASE_URL}/transcript/${meetingId}`, {
-    method: "GET",
-  });
-  return res.json();
+  const response = await fetch(
+    `/api/transcript/${encodeURIComponent(meetingId)}`,
+    { cache: "no-store" }
+  );
+
+  const contentType = response.headers.get("Content-Type") ?? "";
+  const text = await response.text();
+
+  if (!response.ok) {
+    const data = text ? parseJson(text) : null;
+    const message =
+      typeof data?.error === "string"
+        ? data.error
+        : `Request failed with status ${response.status}`;
+    throw new Error(message);
+  }
+
+  if (contentType.includes("application/json")) {
+    return text ? parseJson(text) : null;
+  }
+
+  return text;
 }
 
 export default API;
