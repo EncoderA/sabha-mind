@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ExternalLink, Home, ScrollText, Mic } from 'lucide-react';
+import { ExternalLink, Home, MessageSquare, ScrollText, Mic } from 'lucide-react';
 
 import { ThemeSwitch } from '@/components/theme-switch';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,12 @@ const navItems = [
         href: '/meet-addon',
         icon: Home,
         exact: true,
+    },
+    {
+        label: 'Transcripts',
+        href: '/meet-addon/transcripts',
+        icon: MessageSquare,
+        exact: false,
     },
     {
         label: 'Summaries',

@@ -405,9 +405,9 @@ export default function MeetAddOnPage() {
                     </h2>
                     <Link
                         className="text-[11px] font-medium text-primary hover:underline"
-                        href="/meet-addon/summaries"
+                        href="/meet-addon/transcripts"
                     >
-                        All summaries
+                        View all
                     </Link>
                 </div>
                 {transcripts.length > 0 ? (
@@ -419,7 +419,7 @@ export default function MeetAddOnPage() {
                             return (
                                 <Link
                                     className="block w-full rounded-lg border border-border/70 bg-background p-3 text-left text-[12px] transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/15"
-                                    href={`/meet-addon/summaries/${encodeURIComponent(id)}`}
+                                    href={`/meet-addon/transcripts/${encodeURIComponent(id)}`}
                                     key={id}
                                 >
                                     <div className="font-medium text-foreground">

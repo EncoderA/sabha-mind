@@ -11,6 +11,21 @@ export type BotDonePayload = {
   meetingId: string;
 };
 
+export type TranscriptSegment = {
+  id: string;
+  meetingId: string;
+  start: number;
+  end: number;
+  text: string;
+  speaker: string;
+};
+
+export type MeetingTranscript = {
+  meetingId: string;
+  createdAt?: string;
+  segments: TranscriptSegment[];
+};
+
 export type TranscriptListItem = {
   id?: string;
   meetingId?: string;
@@ -21,6 +36,7 @@ export type TranscriptListItem = {
   date?: string;
   duration?: string;
   participantCount?: number;
+  segments?: TranscriptSegment[];
   [key: string]: unknown;
 };
 
@@ -109,7 +125,128 @@ export function getTranscriptItemTitle(item: TranscriptListItem) {
   return id ? `Meeting ${id}` : "Meeting transcript";
 }
 
+function parseSegment(raw: unknown): TranscriptSegment | null {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const segment = raw as Record<string, unknown>;
+  const text = typeof segment.text === "string" ? segment.text.trim() : "";
+  const speaker =
+    typeof segment.speaker === "string" ? segment.speaker.trim() : "Unknown";
+
+  if (!text) {
+    return null;
+  }
+
+  return {
+    id: typeof segment.id === "string" ? segment.id : "",
+    meetingId:
+      typeof segment.meetingId === "string" ? segment.meetingId : "",
+    start: typeof segment.start === "number" ? segment.start : 0,
+    end: typeof segment.end === "number" ? segment.end : 0,
+    text,
+    speaker,
+  };
+}
+
+function findTranscriptRecord(payload: unknown): Record<string, unknown> | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+  if (Array.isArray(record.segments)) {
+    return record;
+  }
+
+  for (const key of ["transcript", "data", "meeting", "record", "result"]) {
+    const nested = record[key];
+    if (
+      nested &&
+      typeof nested === "object" &&
+      Array.isArray((nested as Record<string, unknown>).segments)
+    ) {
+      return nested as Record<string, unknown>;
+    }
+  }
+
+  return null;
+}
+
+export function parseMeetingTranscript(
+  payload: unknown
+): MeetingTranscript | null {
+  const record = findTranscriptRecord(payload);
+  if (!record) {
+    return null;
+  }
+
+  const rawSegments = record.segments;
+  if (!Array.isArray(rawSegments)) {
+    return null;
+  }
+
+  const segments = rawSegments
+    .map(parseSegment)
+    .filter((segment): segment is TranscriptSegment => segment !== null);
+
+  const meetingId =
+    (typeof record.meetingId === "string" && record.meetingId) ||
+    segments[0]?.meetingId ||
+    "";
+
+  if (!meetingId && segments.length === 0) {
+    return null;
+  }
+
+  const createdAt =
+    typeof record.createdAt === "string" ? record.createdAt : undefined;
+
+  return {
+    meetingId,
+    createdAt,
+    segments,
+  };
+}
+
+export function formatSegmentTime(seconds: number) {
+  const total = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(total / 60);
+  const remainder = total % 60;
+  return `${minutes}:${remainder.toString().padStart(2, "0")}`;
+}
+
+export function formatSegmentRange(start: number, end: number) {
+  return `${formatSegmentTime(start)} – ${formatSegmentTime(end)}`;
+}
+
+export function getSegmentCount(item: TranscriptListItem) {
+  if (Array.isArray(item.segments)) {
+    return item.segments.length;
+  }
+  return 0;
+}
+
 export function getTranscriptItemPreview(item: TranscriptListItem) {
+  const segments = item.segments;
+  if (Array.isArray(segments) && segments.length > 0) {
+    const first = segments[0];
+    const preview =
+      typeof first === "object" && first && "text" in first
+        ? String((first as TranscriptSegment).text)
+        : "";
+    if (preview.trim()) {
+      const trimmed = preview.trim();
+      const speaker =
+        typeof first === "object" && first && "speaker" in first
+          ? String((first as TranscriptSegment).speaker)
+          : "";
+      const line = speaker ? `${speaker}: ${trimmed}` : trimmed;
+      return line.length > 160 ? `${line.slice(0, 157)}…` : line;
+    }
+  }
+
   for (const key of ["preview", "summary", "transcript", "text"]) {
     const value = item[key];
     if (typeof value === "string" && value.trim()) {
