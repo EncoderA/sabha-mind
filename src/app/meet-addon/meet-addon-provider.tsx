@@ -31,9 +31,7 @@ export function MeetAddonProvider({ children }: { children: ReactNode }) {
     const [sidePanelClient, setSidePanelClient] =
         useState<MeetSidePanelClient | null>(null);
     const [isReady, setIsReady] = useState(false);
-    const [statusMessage, setStatusMessage] = useState(
-        'Connecting to the Meet side panel...'
-    );
+    const [statusMessage, setStatusMessage] = useState('Connecting…');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
@@ -53,9 +51,7 @@ export function MeetAddonProvider({ children }: { children: ReactNode }) {
 
                 setSidePanelClient(client);
                 setIsReady(true);
-                setStatusMessage(
-                    'Ready to launch the VartaIQ recording workspace.'
-                );
+                setStatusMessage('Connected to Google Meet.');
             } catch (error) {
                 if (!isMounted) {
                     return;
@@ -66,7 +62,7 @@ export function MeetAddonProvider({ children }: { children: ReactNode }) {
                         ? error.message
                         : 'Failed to initialize the Meet add-on side panel.'
                 );
-                setStatusMessage('Initialization failed.');
+                setStatusMessage('Could not connect to Google Meet.');
             }
         }
 

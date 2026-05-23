@@ -91,6 +91,18 @@ export function storeJobId(jobId: string) {
   }
 }
 
+export function clearStoredJobId() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    sessionStorage.removeItem(JOB_ID_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 export function normalizeTranscriptList(
   payload: unknown
 ): TranscriptListItem[] {

@@ -8,7 +8,7 @@ export default function MeetAddonLayout({
 }) {
     return (
         <MeetAddonProvider>
-            <div className="flex min-h-screen flex-col bg-background font-mono">
+            <div className="flex min-h-screen flex-col bg-background">
                 <AddonHeader />
                 <main className="flex flex-1 flex-col">{children}</main>
             </div>

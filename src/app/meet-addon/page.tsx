@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import {
-    CircleDot,
-    ClipboardList,
+    ChevronRight,
+    Circle,
     LoaderCircle,
-    Send,
+    Mic,
     Square,
 } from 'lucide-react';
 
@@ -16,6 +16,7 @@ import {
     getTranscriptItemId,
     getTranscriptItemPreview,
     getTranscriptItemTitle,
+    clearStoredJobId,
     loadStoredJobId,
     normalizeTranscriptList,
     storeJobId,
@@ -27,42 +28,42 @@ import {
     submitMeetingLink,
 } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { useMeetAddon } from './meet-addon-provider';
 
-const DEFAULT_MEET_URL = 'https://meet.google.com/abc-defg-hij';
+type RecordingPhase = 'idle' | 'recording' | 'processing';
 
-function prettyPrint(value: unknown) {
-    return JSON.stringify(value, null, 2);
+function formatMeetingCode(code: string) {
+    if (code.includes('-')) {
+        return code;
+    }
+    if (code.length === 10) {
+        return `${code.slice(0, 3)}-${code.slice(3, 7)}-${code.slice(7)}`;
+    }
+    return code;
 }
 
 export default function MeetAddOnPage() {
     const {
         errorMessage: meetErrorMessage,
-        isPending: isMeetPending,
         isReady,
         sidePanelClient,
-        startRecording: openMeetWorkspace,
-        statusMessage: meetStatusMessage,
     } = useMeetAddon();
-    const [meetUrl, setMeetUrl] = useState(DEFAULT_MEET_URL);
-    const [meetingId, setMeetingId] = useState('');
+    const [meetUrl, setMeetUrl] = useState('');
+    const [meetingCode, setMeetingCode] = useState('');
     const [jobId, setJobId] = useState('');
+    const [phase, setPhase] = useState<RecordingPhase>('idle');
     const [transcripts, setTranscripts] = useState<TranscriptListItem[]>([]);
-    const [lastSubmitResponse, setLastSubmitResponse] = useState<Record<
-        string,
-        unknown
-    > | null>(null);
-    const [apiMessage, setApiMessage] = useState('Ready to connect the recording bot.');
+    const [statusNote, setStatusNote] = useState(
+        'Record this meeting to generate a transcript when you are done.'
+    );
     const [apiErrorMessage, setApiErrorMessage] = useState<string | null>(null);
     const [isApiPending, startApiTransition] = useTransition();
-    const submittedUrlRef = useRef<string | null>(null);
+    const [isLoadingTranscripts, setIsLoadingTranscripts] = useState(true);
+
+    const hasMeeting = Boolean(meetingCode.trim());
+    const isRecording = phase === 'recording';
+    const isProcessing = phase === 'processing';
 
     async function refreshTranscripts() {
         const payload = await getAllTranscripts();
@@ -76,21 +77,25 @@ export default function MeetAddOnPage() {
                 setApiErrorMessage(
                     error instanceof Error
                         ? error.message
-                        : 'Recording bot request failed.'
+                        : 'Something went wrong. Please try again.'
                 );
+                if (phase === 'recording') {
+                    setPhase('idle');
+                }
             });
         });
     }
 
-    function handleSubmitLink() {
+    function handleStartRecording() {
         const url = meetUrl.trim();
         if (!url) {
-            setApiErrorMessage('Enter a Meet URL before submitting.');
+            setApiErrorMessage(
+                'We could not detect this meeting yet. Open VartaIQ from inside an active Google Meet call.'
+            );
             return;
         }
 
         runApiAction(async () => {
-            submittedUrlRef.current = url;
             const response = await submitMeetingLink(url);
             const nextJobId = extractJobId(response);
             const derivedMeetingId =
@@ -98,59 +103,50 @@ export default function MeetAddOnPage() {
                 (typeof response.meetingId === 'string' ? response.meetingId : '');
 
             if (derivedMeetingId) {
-                setMeetingId(derivedMeetingId);
+                setMeetingCode(derivedMeetingId);
             }
             if (nextJobId) {
                 setJobId(nextJobId);
                 storeJobId(nextJobId);
             }
 
-            setLastSubmitResponse(
-                response && typeof response === 'object'
-                    ? (response as Record<string, unknown>)
-                    : null
+            setPhase('recording');
+            setStatusNote(
+                'Recording is in progress. Stay in the meeting until you tap Stop.'
             );
-            setApiMessage(
-                nextJobId
-                    ? `Meeting link submitted. Job ID: ${nextJobId}`
-                    : 'Meeting link submitted.'
-            );
-            await refreshTranscripts();
         });
     }
 
-    function handleBotDone() {
+    function handleStopRecording() {
         const resolvedJobId = jobId.trim() || loadStoredJobId();
         const resolvedMeetingId =
-            meetingId.trim() || extractMeetingIdFromUrl(meetUrl.trim());
+            meetingCode.trim() || extractMeetingIdFromUrl(meetUrl.trim());
 
         if (!resolvedJobId) {
-            setApiErrorMessage('Submit a meeting link first to obtain a job ID.');
+            setApiErrorMessage(
+                'Could not find an active recording session. Start recording again.'
+            );
             return;
         }
 
         if (!resolvedMeetingId) {
-            setApiErrorMessage('Meeting ID is required for the bot-done signal.');
+            setApiErrorMessage('Meeting details are missing. Please try again.');
             return;
         }
 
         runApiAction(async () => {
-            const response = await submitBotDoneSignal(
-                resolvedJobId,
-                resolvedMeetingId
-            );
-            setApiMessage(`Bot-done signal sent for meeting ${resolvedMeetingId}.`);
-            setLastSubmitResponse(
-                response && typeof response === 'object' ? response : null
+            await submitBotDoneSignal(resolvedJobId, resolvedMeetingId);
+            setPhase('processing');
+            setStatusNote(
+                'Wrapping up your recording. Your transcript will appear shortly.'
             );
             await refreshTranscripts();
-        });
-    }
-
-    function handleRefreshTranscripts() {
-        runApiAction(async () => {
-            await refreshTranscripts();
-            setApiMessage('Transcript list refreshed.');
+            setPhase('idle');
+            setJobId('');
+            clearStoredJobId();
+            setStatusNote(
+                'Recording saved. Open Transcripts to read the conversation.'
+            );
         });
     }
 
@@ -164,27 +160,19 @@ export default function MeetAddOnPage() {
     useEffect(() => {
         let isMounted = true;
 
-        async function bootstrapBotApi() {
+        async function loadRecentTranscripts() {
             try {
                 await refreshTranscripts();
-                if (!isMounted) {
-                    return;
+            } catch {
+                // Non-blocking: home still works if list fails
+            } finally {
+                if (isMounted) {
+                    setIsLoadingTranscripts(false);
                 }
-                setApiMessage('Recording bot API connected.');
-            } catch (error) {
-                if (!isMounted) {
-                    return;
-                }
-
-                setApiErrorMessage(
-                    error instanceof Error
-                        ? error.message
-                        : 'Recording bot request failed.'
-                );
             }
         }
 
-        void bootstrapBotApi();
+        void loadRecentTranscripts();
 
         return () => {
             isMounted = false;
@@ -200,63 +188,17 @@ export default function MeetAddOnPage() {
 
         async function fetchMeetingInfo() {
             try {
-                if (!sidePanelClient) {
+                const meetingInfo = await sidePanelClient!.getMeetingInfo();
+
+                if (!isMounted || !meetingInfo?.meetingCode) {
                     return;
                 }
 
-                const meetingInfo = await sidePanelClient.getMeetingInfo();
-
-                if (!isMounted) {
-                    return;
-                }
-
-                if (meetingInfo?.meetingCode) {
-                    const actualMeetUrl = `https://meet.google.com/${meetingInfo.meetingCode}`;
-                    setMeetUrl(actualMeetUrl);
-                    setMeetingId(meetingInfo.meetingCode);
-
-                    if (submittedUrlRef.current !== actualMeetUrl) {
-                        submittedUrlRef.current = actualMeetUrl;
-
-                        try {
-                            const response = await submitMeetingLink(actualMeetUrl);
-                            const nextJobId = extractJobId(response);
-
-                            if (!isMounted) {
-                                return;
-                            }
-
-                            if (nextJobId) {
-                                setJobId(nextJobId);
-                                storeJobId(nextJobId);
-                            }
-
-                            setLastSubmitResponse(
-                                response && typeof response === 'object'
-                                    ? (response as Record<string, unknown>)
-                                    : null
-                            );
-                            setApiMessage(
-                                nextJobId
-                                    ? `Auto-submitted Meet link. Job ID: ${nextJobId}`
-                                    : 'Auto-submitted Meet link.'
-                            );
-                            await refreshTranscripts();
-                        } catch (error) {
-                            if (!isMounted) {
-                                return;
-                            }
-
-                            setApiErrorMessage(
-                                error instanceof Error
-                                    ? error.message
-                                    : 'Failed to auto-submit meeting link.'
-                            );
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to fetch meeting info:', error);
+                const code = meetingInfo.meetingCode;
+                setMeetingCode(code);
+                setMeetUrl(`https://meet.google.com/${code}`);
+            } catch {
+                // Outside Meet or SDK unavailable — user sees empty state
             }
         }
 
@@ -267,175 +209,162 @@ export default function MeetAddOnPage() {
         };
     }, [sidePanelClient]);
 
+    const recentTranscripts = transcripts.slice(0, 3);
+
     return (
-        <div className="flex flex-1 flex-col gap-3 bg-background p-3 font-mono">
-            <section className="rounded-lg border border-border/70 bg-muted/20 p-3">
-                <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                    <CircleDot className="size-3.5 text-foreground/70" />
-                    Meet add-on status
-                </div>
-                <p aria-live="polite" className="mt-2 text-[13px] leading-5 text-foreground">
-                    {meetStatusMessage}
+        <div className="flex flex-1 flex-col gap-4 p-4">
+            <div
+                className={cn(
+                    'flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] font-medium w-fit',
+                    isRecording
+                        ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300'
+                        : isProcessing
+                          ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                          : 'border-border/70 bg-muted/30 text-muted-foreground'
+                )}
+            >
+                {isRecording ? (
+                    <Circle className="size-2 fill-current text-red-500 animate-pulse" />
+                ) : isProcessing || isApiPending ? (
+                    <LoaderCircle className="size-3 animate-spin" />
+                ) : (
+                    <Circle
+                        className={cn(
+                            'size-2 fill-current',
+                            isReady && hasMeeting
+                                ? 'text-emerald-500'
+                                : 'text-muted-foreground/50'
+                        )}
+                    />
+                )}
+                {isRecording
+                    ? 'Recording'
+                    : isProcessing
+                      ? 'Processing'
+                      : isReady && hasMeeting
+                        ? 'Ready to record'
+                        : 'Waiting for meeting'}
+            </div>
+
+            <section className="space-y-1">
+                <h1 className="text-lg font-semibold tracking-tight">
+                    {isRecording ? 'Capturing this meeting' : 'Record this meeting'}
+                </h1>
+                <p className="text-[13px] leading-relaxed text-muted-foreground">
+                    {statusNote}
                 </p>
+            </section>
+
+            <section className="rounded-xl border border-border/70 bg-muted/20 p-4">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Google Meet
+                </p>
+                {hasMeeting ? (
+                    <p className="mt-1 text-base font-medium tracking-tight">
+                        {formatMeetingCode(meetingCode)}
+                    </p>
+                ) : (
+                    <p className="mt-1 text-[13px] text-muted-foreground">
+                        Join a meeting and open VartaIQ from the Meet side panel.
+                    </p>
+                )}
                 {meetErrorMessage ? (
-                    <p
-                        aria-live="polite"
-                        className="mt-2 text-[12px] leading-5 text-destructive"
-                        role="alert"
-                    >
+                    <p className="mt-2 text-[12px] text-destructive" role="alert">
                         {meetErrorMessage}
                     </p>
                 ) : null}
-                <Button
-                    className="mt-3 w-full"
-                    disabled={!isReady || isMeetPending}
-                    onClick={openMeetWorkspace}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                >
-                    {isMeetPending ? 'Opening workspace...' : 'Open Meet workspace'}
-                </Button>
             </section>
 
-            <Card className="rounded-lg border-border/70">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-sm">
-                        <Send className="size-4" />
-                        Recording bot
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    <label className="space-y-1.5 text-[12px] font-medium">
-                        <span>Meet URL</span>
-                        <input
-                            className="h-9 w-full rounded-lg border border-border/70 bg-background px-3 text-[13px] outline-none transition-colors focus-visible:border-primary/50 focus-visible:ring-3 focus-visible:ring-primary/15"
-                            onChange={(event) => {
-                                submittedUrlRef.current = null;
-                                setMeetUrl(event.target.value);
-                            }}
-                            placeholder="https://meet.google.com/abc-defg-hij"
-                            type="url"
-                            value={meetUrl}
-                        />
-                    </label>
-                    <label className="space-y-1.5 text-[12px] font-medium">
-                        <span>Meeting ID</span>
-                        <input
-                            className="h-9 w-full rounded-lg border border-border/70 bg-background px-3 text-[13px] outline-none transition-colors focus-visible:border-primary/50 focus-visible:ring-3 focus-visible:ring-primary/15"
-                            onChange={(event) => setMeetingId(event.target.value)}
-                            placeholder="abc-defg-hij"
-                            type="text"
-                            value={meetingId}
-                        />
-                    </label>
-                    <label className="space-y-1.5 text-[12px] font-medium">
-                        <span>Job ID</span>
-                        <input
-                            className="h-9 w-full rounded-lg border border-border/70 bg-background px-3 text-[13px] outline-none transition-colors focus-visible:border-primary/50 focus-visible:ring-3 focus-visible:ring-primary/15"
-                            onChange={(event) => setJobId(event.target.value)}
-                            placeholder="From submit-link response"
-                            type="text"
-                            value={jobId}
-                        />
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                        <Button
-                            disabled={isApiPending || !meetUrl.trim()}
-                            onClick={handleSubmitLink}
-                            type="button"
-                        >
-                            {isApiPending ? (
-                                <LoaderCircle className="size-3.5 animate-spin" />
-                            ) : (
-                                <Send className="size-3.5" />
-                            )}
-                            Submit link
-                        </Button>
-                        <Button
-                            disabled={isApiPending}
-                            onClick={handleBotDone}
-                            type="button"
-                            variant="destructive"
-                        >
-                            <Square className="size-3.5" />
-                            Bot done
-                        </Button>
-                    </div>
-                </CardContent>
-                <CardFooter>
+            <div className="flex flex-col gap-2">
+                {isRecording ? (
                     <Button
-                        className="w-full"
+                        className="h-11 w-full gap-2 text-[15px]"
                         disabled={isApiPending}
-                        onClick={handleRefreshTranscripts}
-                        size="sm"
+                        onClick={handleStopRecording}
                         type="button"
-                        variant="outline"
+                        variant="destructive"
                     >
-                        <ClipboardList className="size-3.5" />
-                        Refresh transcripts
+                        {isApiPending ? (
+                            <LoaderCircle className="size-4 animate-spin" />
+                        ) : (
+                            <Square className="size-4 fill-current" />
+                        )}
+                        Stop recording
                     </Button>
-                </CardFooter>
-            </Card>
-
-            <section aria-live="polite" className="space-y-2">
-                <div className="rounded-lg border border-border/70 bg-muted/15 p-3 text-[12px] leading-5">
-                    <div className="font-medium text-foreground">{apiMessage}</div>
-                    {lastSubmitResponse ? (
-                        <pre className="mt-2 max-h-28 overflow-auto whitespace-pre-wrap rounded-md bg-background p-2 text-[11px] text-muted-foreground">
-                            {prettyPrint(lastSubmitResponse)}
-                        </pre>
-                    ) : null}
-                </div>
-                {apiErrorMessage ? (
-                    <div
-                        className="rounded-lg border border-destructive/25 bg-destructive/10 p-3 text-[12px] leading-5 text-destructive"
-                        role="alert"
+                ) : (
+                    <Button
+                        className="h-11 w-full gap-2 text-[15px]"
+                        disabled={
+                            isApiPending || isProcessing || !hasMeeting || !isReady
+                        }
+                        onClick={handleStartRecording}
+                        type="button"
                     >
-                        {apiErrorMessage}
-                    </div>
-                ) : null}
-            </section>
+                        {isApiPending ? (
+                            <LoaderCircle className="size-4 animate-spin" />
+                        ) : (
+                            <Mic className="size-4" />
+                        )}
+                        Record
+                    </Button>
+                )}
+            </div>
 
-            <section className="space-y-2">
+            {apiErrorMessage ? (
+                <div
+                    className="rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2.5 text-[13px] text-destructive"
+                    role="alert"
+                >
+                    {apiErrorMessage}
+                </div>
+            ) : null}
+
+            <section className="mt-2 space-y-2">
                 <div className="flex items-center justify-between">
-                    <h2 className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        <ClipboardList className="size-3.5" />
-                        Transcripts
+                    <h2 className="text-[13px] font-semibold text-foreground">
+                        Recent transcripts
                     </h2>
                     <Link
-                        className="text-[11px] font-medium text-primary hover:underline"
+                        className="flex items-center gap-0.5 text-[12px] font-medium text-primary hover:underline"
                         href="/meet-addon/transcripts"
                     >
-                        View all
+                        See all
+                        <ChevronRight className="size-3.5" />
                     </Link>
                 </div>
-                {transcripts.length > 0 ? (
-                    <div className="space-y-2">
-                        {transcripts.map((item, index) => {
+
+                {isLoadingTranscripts ? (
+                    <div className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border/70 py-8 text-[13px] text-muted-foreground">
+                        <LoaderCircle className="size-4 animate-spin" />
+                        Loading…
+                    </div>
+                ) : recentTranscripts.length > 0 ? (
+                    <ul className="space-y-2">
+                        {recentTranscripts.map((item, index) => {
                             const id =
                                 getTranscriptItemId(item) || `transcript-${index}`;
 
                             return (
-                                <Link
-                                    className="block w-full rounded-lg border border-border/70 bg-background p-3 text-left text-[12px] transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/15"
-                                    href={`/meet-addon/transcripts/${encodeURIComponent(id)}`}
-                                    key={id}
-                                >
-                                    <div className="font-medium text-foreground">
-                                        {getTranscriptItemTitle(item)}
-                                    </div>
-                                    <div className="mt-1 text-muted-foreground">
-                                        {getTranscriptItemPreview(item)}
-                                    </div>
-                                </Link>
+                                <li key={id}>
+                                    <Link
+                                        className="block rounded-lg border border-border/60 bg-background p-3 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary/15"
+                                        href={`/meet-addon/transcripts/${encodeURIComponent(id)}`}
+                                    >
+                                        <p className="text-[13px] font-medium text-foreground">
+                                            {getTranscriptItemTitle(item)}
+                                        </p>
+                                        <p className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">
+                                            {getTranscriptItemPreview(item)}
+                                        </p>
+                                    </Link>
+                                </li>
                             );
                         })}
-                    </div>
+                    </ul>
                 ) : (
-                    <div className="rounded-lg border border-dashed border-border/70 p-4 text-center text-[12px] text-muted-foreground">
-                        No transcripts returned yet.
-                    </div>
+                    <p className="rounded-lg border border-dashed border-border/70 py-8 text-center text-[13px] text-muted-foreground">
+                        Your transcripts will show up here after you record a meeting.
+                    </p>
                 )}
             </section>
         </div>
