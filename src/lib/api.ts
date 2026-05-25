@@ -1,7 +1,9 @@
 import axios from "axios";
 
 import type {
+  BotJob,
   BotDonePayload,
+  StopBotResponse,
   SubmitLinkResponse,
   TranscriptListItem,
 } from "@/lib/bot-api";
@@ -22,6 +24,32 @@ type RequestOptions = {
   method?: "GET" | "POST";
 };
 
+export async function parseApiResponse<T = unknown>(res: Response) {
+  const text = await res.text();
+
+  let data: Record<string, unknown> = {};
+  try {
+    const parsed = text ? JSON.parse(text) : {};
+    data =
+      parsed && typeof parsed === "object"
+        ? (parsed as Record<string, unknown>)
+        : { message: String(parsed) };
+  } catch {
+    data = { message: text };
+  }
+
+  if (!res.ok) {
+    const details = typeof data.details === "string" ? data.details : "";
+    const error = typeof data.error === "string" ? data.error : "";
+    const message = typeof data.message === "string" ? data.message : "";
+    throw new Error(
+      details || error || message || `HTTP ${res.status}`
+    );
+  }
+
+  return data as T;
+}
+
 async function requestJson<T>(path: string, options: RequestOptions = {}) {
   const response = await fetch(path, {
     cache: "no-store",
@@ -35,18 +63,7 @@ async function requestJson<T>(path: string, options: RequestOptions = {}) {
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
 
-  const text = await response.text();
-  const data = text ? parseJson(text) : null;
-
-  if (!response.ok) {
-    const message =
-      typeof data?.error === "string"
-        ? data.error
-        : `Request failed with status ${response.status}`;
-    throw new Error(message);
-  }
-
-  return data as T;
+  return parseApiResponse<T>(response);
 }
 
 function parseJson(text: string) {
@@ -114,6 +131,17 @@ export function submitMeetingLink(url: string) {
   return requestJson<SubmitLinkResponse>("/api/submit-link", {
     method: "POST",
     body: { url },
+  });
+}
+
+export function getBotJob(jobId: string) {
+  return requestJson<BotJob>(`/api/job/${encodeURIComponent(jobId)}`);
+}
+
+export function stopBot(jobId: string) {
+  return requestJson<StopBotResponse>("/api/stop-bot", {
+    method: "POST",
+    body: { jobId },
   });
 }
 

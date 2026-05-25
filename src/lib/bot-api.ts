@@ -2,7 +2,36 @@ export type SubmitLinkResponse = {
   jobId?: string;
   id?: string;
   job_id?: string;
+  status?: BotJobStatus;
+  containerName?: string;
+  message?: string;
   meetingId?: string;
+  [key: string]: unknown;
+};
+
+export type BotJobStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "stopped";
+
+export type BotJob = {
+  id?: string;
+  jobId?: string;
+  meetingUrl?: string;
+  status: BotJobStatus;
+  meetingId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  error?: string | null;
+  [key: string]: unknown;
+};
+
+export type StopBotResponse = {
+  jobId: string;
+  status: "stopped";
+  message?: string;
   [key: string]: unknown;
 };
 
@@ -41,6 +70,14 @@ export type TranscriptListItem = {
 };
 
 const JOB_ID_STORAGE_KEY = "meet-addon-job-id";
+
+export const statusText: Record<BotJobStatus, string> = {
+  pending: "Preparing bot...",
+  running: "Bot is joining or waiting for host admission...",
+  completed: "Bot completed successfully.",
+  failed: "Bot failed.",
+  stopped: "Bot stopped manually.",
+};
 
 export function extractMeetingIdFromUrl(meetUrl: string) {
   try {

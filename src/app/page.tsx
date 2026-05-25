@@ -209,7 +209,7 @@ export default function Home() {
             </div>
           </div>
         </section>
-
+ 
         <section id="platform" className="scroll-mt-28 px-6 py-20 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="max-w-2xl">

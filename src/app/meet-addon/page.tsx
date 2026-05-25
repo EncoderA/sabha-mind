@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import {
     ChevronRight,
     Circle,
@@ -19,12 +19,17 @@ import {
     clearStoredJobId,
     loadStoredJobId,
     normalizeTranscriptList,
+    statusText,
     storeJobId,
+    type BotJob,
+    type BotJobStatus,
     type TranscriptListItem,
 } from '@/lib/bot-api';
 import {
+    getBotJob,
     getAllTranscripts,
-    submitBotDoneSignal,
+    getTranscriptDirect,
+    stopBot,
     submitMeetingLink,
 } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -32,6 +37,12 @@ import { cn } from '@/lib/utils';
 import { useMeetAddon } from './meet-addon-provider';
 
 type RecordingPhase = 'idle' | 'recording' | 'processing';
+
+const terminalJobStatuses = new Set<BotJobStatus>([
+    'completed',
+    'failed',
+    'stopped',
+]);
 
 function formatMeetingCode(code: string) {
     if (code.includes('-')) {
@@ -52,6 +63,7 @@ export default function MeetAddOnPage() {
     const [meetUrl, setMeetUrl] = useState('');
     const [meetingCode, setMeetingCode] = useState('');
     const [jobId, setJobId] = useState('');
+    const [jobStatus, setJobStatus] = useState<BotJobStatus | null>(null);
     const [phase, setPhase] = useState<RecordingPhase>('idle');
     const [transcripts, setTranscripts] = useState<TranscriptListItem[]>([]);
     const [statusNote, setStatusNote] = useState(
@@ -65,10 +77,10 @@ export default function MeetAddOnPage() {
     const isRecording = phase === 'recording';
     const isProcessing = phase === 'processing';
 
-    async function refreshTranscripts() {
+    const refreshTranscripts = useCallback(async () => {
         const payload = await getAllTranscripts();
         setTranscripts(normalizeTranscriptList(payload));
-    }
+    }, []);
 
     function runApiAction(action: () => Promise<void>) {
         setApiErrorMessage(null);
@@ -81,10 +93,54 @@ export default function MeetAddOnPage() {
                 );
                 if (phase === 'recording') {
                     setPhase('idle');
+                    setJobStatus(null);
                 }
             });
         });
     }
+
+    const handleJobUpdate = useCallback(
+        async (job: BotJob) => {
+            setJobStatus(job.status);
+
+            if (job.status === 'pending' || job.status === 'running') {
+                setPhase('recording');
+                setStatusNote(statusText[job.status]);
+                return;
+            }
+
+            if (job.status === 'completed') {
+                setPhase('processing');
+                setStatusNote(statusText.completed);
+
+                if (job.meetingId) {
+                    try {
+                        await getTranscriptDirect(job.meetingId);
+                    } catch {
+                        // Fall back to the transcript list below.
+                    }
+                }
+
+                await refreshTranscripts();
+                clearStoredJobId();
+                setJobId('');
+                setPhase('idle');
+                return;
+            }
+
+            clearStoredJobId();
+            setJobId('');
+            setPhase('idle');
+            setStatusNote(statusText[job.status]);
+
+            if (job.status === 'failed') {
+                setApiErrorMessage(
+                    job.error || 'Bot failed, but no detailed error was available.'
+                );
+            }
+        },
+        [refreshTranscripts]
+    );
 
     function handleStartRecording() {
         const url = meetUrl.trim();
@@ -105,22 +161,21 @@ export default function MeetAddOnPage() {
             if (derivedMeetingId) {
                 setMeetingCode(derivedMeetingId);
             }
-            if (nextJobId) {
-                setJobId(nextJobId);
-                storeJobId(nextJobId);
+            if (!nextJobId) {
+                throw new Error('Bot started, but no job id was returned.');
             }
 
+            setJobId(nextJobId);
+            storeJobId(nextJobId);
+
+            setJobStatus(response.status ?? 'running');
             setPhase('recording');
-            setStatusNote(
-                'Recording is in progress. Stay in the meeting until you tap Stop.'
-            );
+            setStatusNote('Bot started. Waiting for host admission.');
         });
     }
 
     function handleStopRecording() {
         const resolvedJobId = jobId.trim() || loadStoredJobId();
-        const resolvedMeetingId =
-            meetingCode.trim() || extractMeetingIdFromUrl(meetUrl.trim());
 
         if (!resolvedJobId) {
             setApiErrorMessage(
@@ -129,33 +184,73 @@ export default function MeetAddOnPage() {
             return;
         }
 
-        if (!resolvedMeetingId) {
-            setApiErrorMessage('Meeting details are missing. Please try again.');
-            return;
-        }
-
         runApiAction(async () => {
-            await submitBotDoneSignal(resolvedJobId, resolvedMeetingId);
-            setPhase('processing');
-            setStatusNote(
-                'Wrapping up your recording. Your transcript will appear shortly.'
-            );
-            await refreshTranscripts();
+            const response = await stopBot(resolvedJobId);
+            setJobStatus(response.status);
             setPhase('idle');
             setJobId('');
             clearStoredJobId();
-            setStatusNote(
-                'Recording saved. Open Transcripts to read the conversation.'
-            );
+            setStatusNote(response.message || statusText.stopped);
         });
     }
 
     useEffect(() => {
         const storedJobId = loadStoredJobId();
-        if (storedJobId) {
-            setJobId(storedJobId);
+        if (!storedJobId) {
+            return;
         }
+
+        queueMicrotask(() => {
+            setJobId(storedJobId);
+            setJobStatus('running');
+            setPhase('recording');
+            setStatusNote(statusText.running);
+        });
     }, []);
+
+    useEffect(() => {
+        if (!jobId || (jobStatus && terminalJobStatuses.has(jobStatus))) {
+            return;
+        }
+
+        let isMounted = true;
+
+        async function pollOnce() {
+            try {
+                const job = await getBotJob(jobId);
+                if (!isMounted) {
+                    return;
+                }
+                await handleJobUpdate(job);
+            } catch (error) {
+                if (!isMounted) {
+                    return;
+                }
+
+                clearStoredJobId();
+                setJobId('');
+                setJobStatus('failed');
+                setPhase('idle');
+                setApiErrorMessage(
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to check bot status'
+                );
+                setStatusNote(statusText.failed);
+            }
+        }
+
+        const timer = window.setInterval(() => {
+            void pollOnce();
+        }, 3000);
+
+        void pollOnce();
+
+        return () => {
+            isMounted = false;
+            window.clearInterval(timer);
+        };
+    }, [handleJobUpdate, jobId, jobStatus]);
 
     useEffect(() => {
         let isMounted = true;
@@ -177,7 +272,7 @@ export default function MeetAddOnPage() {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [refreshTranscripts]);
 
     useEffect(() => {
         if (!sidePanelClient) {
@@ -238,17 +333,19 @@ export default function MeetAddOnPage() {
                     />
                 )}
                 {isRecording
-                    ? 'Recording'
+                    ? jobStatus === 'pending'
+                      ? 'Preparing bot'
+                      : 'Bot running'
                     : isProcessing
                       ? 'Processing'
                       : isReady && hasMeeting
-                        ? 'Ready to record'
+                        ? 'Ready to start bot'
                         : 'Waiting for meeting'}
             </div>
 
             <section className="space-y-1">
                 <h1 className="text-lg font-semibold tracking-tight">
-                    {isRecording ? 'Capturing this meeting' : 'Record this meeting'}
+                    {isRecording ? 'Bot is active' : 'Start meeting bot'}
                 </h1>
                 <p className="text-[13px] leading-relaxed text-muted-foreground">
                     {statusNote}
@@ -289,7 +386,7 @@ export default function MeetAddOnPage() {
                         ) : (
                             <Square className="size-4 fill-current" />
                         )}
-                        Stop recording
+                        Stop bot
                     </Button>
                 ) : (
                     <Button
@@ -305,7 +402,7 @@ export default function MeetAddOnPage() {
                         ) : (
                             <Mic className="size-4" />
                         )}
-                        Record
+                        Start bot
                     </Button>
                 )}
             </div>

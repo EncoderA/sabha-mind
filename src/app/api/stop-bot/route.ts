@@ -5,7 +5,7 @@ import { getBotBackendUrl, proxyBackendResponse } from "@/lib/bot-backend";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const res = await fetch(`${getBotBackendUrl()}/submit-link`, {
+    const res = await fetch(`${getBotBackendUrl()}/stop-bot`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
     return proxyBackendResponse(res);
   } catch (error) {
-    console.error("Error proxying submit-link:", error);
+    console.error("Error proxying stop-bot:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -50,7 +50,7 @@ export function AddonHeader() {
                 </div>
                 <div className="flex items-center gap-1.5">
                     <Link
-                        href="https://vartaiq.vercel.app"
+                        href="https://sabha-mind.vercel.app"
                         target="_blank"
                         rel="noopener noreferrer"
                         className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-xs text-foreground/70")}
