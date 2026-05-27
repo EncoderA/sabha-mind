@@ -2,7 +2,6 @@ import axios from "axios";
 
 import type {
   BotJob,
-  BotDonePayload,
   StopBotResponse,
   SubmitLinkResponse,
   TranscriptListItem,
@@ -40,9 +39,7 @@ export async function parseApiResponse<T = unknown>(res: Response) {
     const details = typeof data.details === "string" ? data.details : "";
     const error = typeof data.error === "string" ? data.error : "";
     const message = typeof data.message === "string" ? data.message : "";
-    throw new Error(
-      details || error || message || `HTTP ${res.status}`
-    );
+    throw new Error(details || error || message || `HTTP ${res.status}`);
   }
 
   return data as T;
@@ -123,7 +120,7 @@ export async function handleGoogleCallback(code: string) {
 }
 
 // Recording bot APIs via Next.js proxy (avoids CORS in Meet add-on iframe)
-export type { BotDonePayload, SubmitLinkResponse, TranscriptListItem } from "@/lib/bot-api";
+export type { SubmitLinkResponse, TranscriptListItem } from "@/lib/bot-api";
 
 export function submitMeetingLink(url: string) {
   return requestJson<SubmitLinkResponse>("/api/submit-link", {
@@ -143,29 +140,22 @@ export function stopBot(jobId: string) {
   });
 }
 
-export function submitBotDoneSignal(jobId: string, meetingId: string) {
-  return requestJson<Record<string, unknown>>("/api/bot-done", {
-    method: "POST",
-    body: { jobId, meetingId } satisfies BotDonePayload,
-  });
-}
-
 export function getAllTranscripts() {
   return requestJson<TranscriptListItem[] | Record<string, unknown>>(
-    "/api/transcripts"
+    "/api/transcripts",
   );
 }
 
 export function getMeetingTranscript(meetingId: string) {
   return requestJson<Record<string, unknown>>(
-    `/api/meeting-transcript/${encodeURIComponent(meetingId)}`
+    `/api/meeting-transcript/${encodeURIComponent(meetingId)}`,
   );
 }
 
 export async function getTranscriptDirect(meetingId: string) {
   const response = await fetch(
-    `/api/transcript/${encodeURIComponent(meetingId)}`,
-    { cache: "no-store" }
+    `/api/transcripts/${encodeURIComponent(meetingId)}`,
+    { cache: "no-store" },
   );
 
   const contentType = response.headers.get("Content-Type") ?? "";

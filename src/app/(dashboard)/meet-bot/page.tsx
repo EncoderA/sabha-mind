@@ -1,19 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { normalizeTranscriptList, type TranscriptListItem } from '@/lib/bot-api';
+import { extractMeetingIdFromUrl, normalizeTranscriptList, type TranscriptListItem } from '@/lib/bot-api';
 import { getAllTranscripts } from '@/lib/api';
-import { StatusBadge, MeetingInfoCard, RecordingControl, RecentTranscripts } from '@/components/meet-bot';
+import { StatusBadge } from '@/components/meet-bot/status-badge';
+import { MeetingInfoCard } from '@/components/meet-bot/meeting-info-card';
+import { RecordingControl } from '@/components/meet-bot/recording-control';
+import { RecentTranscripts } from '@/components/meet-bot/recent-transcripts';
 import { useMeetBot } from '@/hooks/use-meet-bot';
-import { useMeetAddon } from './meet-addon-provider';
 
-export default function MeetAddOnPage() {
-    const {
-        errorMessage: meetErrorMessage,
-        isReady,
-        sidePanelClient,
-    } = useMeetAddon();
-    
+export default function MeetBotPage() {
     const [transcripts, setTranscripts] = useState<TranscriptListItem[]>([]);
     const [isLoadingTranscripts, setIsLoadingTranscripts] = useState(true);
 
@@ -39,6 +35,15 @@ export default function MeetAddOnPage() {
         handleStopRecording,
     } = useMeetBot(refreshTranscripts);
 
+    // Handle manual URL input
+    const handleMeetUrlChange = (url: string) => {
+        setMeetUrl(url);
+        const code = extractMeetingIdFromUrl(url);
+        if (code) {
+            setMeetingCode(code);
+        }
+    };
+
     // Load transcripts on mount
     useEffect(() => {
         let isMounted = true;
@@ -47,7 +52,7 @@ export default function MeetAddOnPage() {
             try {
                 await refreshTranscripts();
             } catch {
-                // Non-blocking: home still works if list fails
+                // Non-blocking: page still works if list fails
             } finally {
                 if (isMounted) {
                     setIsLoadingTranscripts(false);
@@ -62,47 +67,12 @@ export default function MeetAddOnPage() {
         };
     }, [refreshTranscripts]);
 
-    // Fetch meeting info from Google Meet Add-on
-    useEffect(() => {
-        if (!sidePanelClient) {
-            return;
-        }
-
-        let isMounted = true;
-
-        async function fetchMeetingInfo() {
-            try {
-                if (!sidePanelClient) {
-                    return;
-                }
-
-                const meetingInfo = await sidePanelClient.getMeetingInfo();
-
-                if (!isMounted || !meetingInfo?.meetingCode) {
-                    return;
-                }
-
-                const code = meetingInfo.meetingCode;
-                setMeetingCode(code);
-                setMeetUrl(`https://meet.google.com/${code}`);
-            } catch {
-                // Outside Meet or SDK unavailable — user sees empty state
-            }
-        }
-
-        void fetchMeetingInfo();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [sidePanelClient, setMeetingCode, setMeetUrl]);
-
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4">
+        <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
             <StatusBadge
                 phase={phase}
                 jobStatus={jobStatus}
-                isReady={isReady}
+                isReady={true}
                 hasMeeting={hasMeeting}
                 isApiPending={isApiPending}
             />
@@ -118,7 +88,10 @@ export default function MeetAddOnPage() {
 
             <MeetingInfoCard
                 meetingCode={meetingCode}
-                errorMessage={meetErrorMessage}
+                errorMessage={null}
+                showManualInput={true}
+                meetUrl={meetUrl}
+                onMeetUrlChange={handleMeetUrlChange}
             />
 
             <div className="flex flex-col gap-2">
@@ -127,7 +100,7 @@ export default function MeetAddOnPage() {
                     isApiPending={isApiPending}
                     isProcessing={isProcessing}
                     hasMeeting={hasMeeting}
-                    isReady={isReady}
+                    isReady={true}
                     onStart={handleStartRecording}
                     onStop={handleStopRecording}
                 />
@@ -145,7 +118,7 @@ export default function MeetAddOnPage() {
             <RecentTranscripts
                 transcripts={transcripts}
                 isLoading={isLoadingTranscripts}
-                basePath="/meet-addon/transcripts"
+                basePath="/meet-bot/transcripts"
             />
         </div>
     );

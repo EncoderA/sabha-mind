@@ -35,11 +35,6 @@ export type StopBotResponse = {
   [key: string]: unknown;
 };
 
-export type BotDonePayload = {
-  jobId: string;
-  meetingId: string;
-};
-
 export type TranscriptSegment = {
   id: string;
   meetingId: string;
@@ -141,7 +136,7 @@ export function clearStoredJobId() {
 }
 
 export function normalizeTranscriptList(
-  payload: unknown
+  payload: unknown,
 ): TranscriptListItem[] {
   if (Array.isArray(payload)) {
     return payload as TranscriptListItem[];
@@ -190,8 +185,7 @@ function parseSegment(raw: unknown): TranscriptSegment | null {
 
   return {
     id: typeof segment.id === "string" ? segment.id : "",
-    meetingId:
-      typeof segment.meetingId === "string" ? segment.meetingId : "",
+    meetingId: typeof segment.meetingId === "string" ? segment.meetingId : "",
     start: typeof segment.start === "number" ? segment.start : 0,
     end: typeof segment.end === "number" ? segment.end : 0,
     text,
@@ -199,7 +193,9 @@ function parseSegment(raw: unknown): TranscriptSegment | null {
   };
 }
 
-function findTranscriptRecord(payload: unknown): Record<string, unknown> | null {
+function findTranscriptRecord(
+  payload: unknown,
+): Record<string, unknown> | null {
   if (!payload || typeof payload !== "object") {
     return null;
   }
@@ -224,7 +220,7 @@ function findTranscriptRecord(payload: unknown): Record<string, unknown> | null 
 }
 
 export function parseMeetingTranscript(
-  payload: unknown
+  payload: unknown,
 ): MeetingTranscript | null {
   const record = findTranscriptRecord(payload);
   if (!record) {
@@ -320,7 +316,7 @@ export function getTranscriptItemDate(item: TranscriptListItem) {
 
 export function extractTranscriptBody(
   wrapped: unknown,
-  direct: string | Record<string, unknown> | null
+  direct: string | Record<string, unknown> | null,
 ) {
   if (typeof direct === "string" && direct.trim()) {
     return direct.trim();
@@ -337,7 +333,14 @@ export function extractTranscriptBody(
 
   if (wrapped && typeof wrapped === "object") {
     const record = wrapped as Record<string, unknown>;
-    for (const key of ["transcript", "text", "content", "summary", "body", "data"]) {
+    for (const key of [
+      "transcript",
+      "text",
+      "content",
+      "summary",
+      "body",
+      "data",
+    ]) {
       const value = record[key];
       if (typeof value === "string" && value.trim()) {
         return value.trim();
