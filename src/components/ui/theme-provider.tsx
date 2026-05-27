@@ -53,9 +53,7 @@ function getStoredTheme(storageKey: string, defaultTheme: Theme) {
 
 function disableTransitions() {
   const style = document.createElement("style");
-  style.appendChild(
-    document.createTextNode("*{transition:none!important}")
-  );
+  style.appendChild(document.createTextNode("*{transition:none!important}"));
   document.head.appendChild(style);
 
   return () => {
@@ -86,16 +84,20 @@ export function ThemeProvider({
   enableSystem = true,
   storageKey = "theme",
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = React.useState<Theme>(() =>
-    getStoredTheme(storageKey, defaultTheme)
-  );
-  const [systemTheme, setSystemTheme] = React.useState<"light" | "dark">(() =>
-    getSystemTheme()
+  const [theme, setThemeState] = React.useState<Theme>(defaultTheme);
+  const [systemTheme, setSystemTheme] = React.useState<"light" | "dark">(
+    "light",
   );
   const resolvedTheme =
-    theme === "system" && enableSystem ? systemTheme : theme === "dark" ? "dark" : "light";
+    theme === "system" && enableSystem
+      ? systemTheme
+      : theme === "dark"
+        ? "dark"
+        : "light";
 
-  const setTheme = React.useCallback<React.Dispatch<React.SetStateAction<string>>>(
+  const setTheme = React.useCallback<
+    React.Dispatch<React.SetStateAction<string>>
+  >(
     (nextTheme) => {
       setThemeState((currentTheme) => {
         const value =
@@ -109,8 +111,25 @@ export function ThemeProvider({
         return normalizedTheme;
       });
     },
-    [defaultTheme, storageKey]
+    [defaultTheme, storageKey],
   );
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    queueMicrotask(() => {
+      if (!isMounted) {
+        return;
+      }
+
+      setThemeState(getStoredTheme(storageKey, defaultTheme));
+      setSystemTheme(getSystemTheme());
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [defaultTheme, storageKey]);
 
   React.useLayoutEffect(() => {
     const restoreTransitions = disableTransitionOnChange
@@ -131,6 +150,7 @@ export function ThemeProvider({
       setSystemTheme(media.matches ? "dark" : "light");
     };
 
+    onChange();
     media.addEventListener("change", onChange);
     return () => {
       media.removeEventListener("change", onChange);
@@ -145,7 +165,7 @@ export function ThemeProvider({
       theme,
       themes: enableSystem ? ["light", "dark", "system"] : ["light", "dark"],
     }),
-    [enableSystem, resolvedTheme, setTheme, systemTheme, theme]
+    [enableSystem, resolvedTheme, setTheme, systemTheme, theme],
   );
 
   return <ThemeContext value={value}>{children}</ThemeContext>;
