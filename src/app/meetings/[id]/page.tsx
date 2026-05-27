@@ -18,8 +18,65 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { getMeetingsApiUrl } from "@/lib/meetings-api";
 
-const API_URL = "http://127.0.0.1:8000";
+type ScoreBreakdown = {
+  final_score?: number;
+  [key: string]: number | undefined;
+};
+
+type MeetingScore = number | ScoreBreakdown;
+
+type Topic = {
+  topic: string;
+  relevance_score: number;
+};
+
+type ActionItem = {
+  task: string;
+  assignee?: string;
+  deadline?: string;
+  priority?: "High" | "Normal" | "Low" | string;
+};
+
+type Decision = {
+  decision: string;
+};
+
+type TranscriptItem = {
+  speaker: string;
+  text: string;
+};
+
+type SpeakerAnalysisEntry = {
+  participation_percentage?: number;
+  engagement_level?: string;
+  word_count?: number;
+  effectiveness_score?: number;
+};
+
+type MeetingData = {
+  meeting_title: string;
+  created_at?: string | number;
+  participant_count?: number;
+  transcript_length?: number;
+  summary?: string;
+  topics?: Topic[];
+  action_items?: ActionItem[];
+  decisions?: Decision[];
+  ai_insights?: string[];
+  speaker_analysis?: Record<string, SpeakerAnalysisEntry>;
+  transcript?: TranscriptItem[];
+  score?: MeetingScore;
+};
+
+const isScoreBreakdown = (
+  score: MeetingScore | undefined
+): score is ScoreBreakdown => typeof score === "object" && score !== null;
+
+const isNumberEntry = (
+  entry: [string, number | undefined]
+): entry is [string, number] => typeof entry[1] === "number";
 
 export default function MeetingPage({
   params,
@@ -27,11 +84,11 @@ export default function MeetingPage({
   params: Promise<{ id: string }>;
 }) {
   const resolvedParams = use(params);
-  const [meeting, setMeeting] = useState<any>(null);
+  const [meeting, setMeeting] = useState<MeetingData | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
-    fetch(`${API_URL}/meetings/${resolvedParams.id}`)
+    fetch(`${getMeetingsApiUrl()}/meetings/${resolvedParams.id}`)
       .then((res) => res.json())
       .then((data) => {
         setMeeting(data);
@@ -57,13 +114,15 @@ export default function MeetingPage({
   }
 
   // Calculate final score from all score components
-  const calculateFinalScore = (scoreObj: any) => {
+  const calculateFinalScore = (scoreObj: MeetingScore | undefined) => {
     if (!scoreObj) return 0;
-    if (typeof scoreObj === 'number') return scoreObj;
+    if (typeof scoreObj === "number") return scoreObj;
     if (scoreObj.final_score !== undefined) return scoreObj.final_score;
-    
+
     // Calculate average of all score components
-    const scores = Object.values(scoreObj).filter((val): val is number => typeof val === 'number');
+    const scores = Object.values(scoreObj).filter(
+      (val): val is number => typeof val === "number"
+    );
     if (scores.length === 0) return 0;
     return scores.reduce((sum, val) => sum + val, 0) / scores.length;
   };
@@ -76,7 +135,22 @@ export default function MeetingPage({
     return { color: "#ef4444", label: "Needs Improvement" };
   };
   const scoreInfo = getScoreColor(score);
-  const duration = Math.floor(meeting.transcript_length / 150);
+  const duration = Math.floor((meeting.transcript_length ?? 0) / 150);
+  const createdAt = meeting.created_at ? new Date(meeting.created_at) : null;
+  const scoreBreakdown = isScoreBreakdown(meeting.score) ? meeting.score : null;
+  const createdDateLabel = createdAt
+    ? createdAt.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "Unknown date";
+  const createdTimeLabel = createdAt
+    ? createdAt.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "Unknown time";
 
   return (
     <>
@@ -106,18 +180,11 @@ export default function MeetingPage({
                     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <Calendar className="size-4" />
-                        {new Date(meeting.created_at || Date.now()).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}
+                        {createdDateLabel}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Clock className="size-4" />
-                        {new Date(meeting.created_at || Date.now()).toLocaleTimeString('en-US', { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
+                        {createdTimeLabel}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Clock className="size-4" />
@@ -272,7 +339,7 @@ export default function MeetingPage({
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {meeting.topics?.slice(0, 3).map((topic: any, index: number) => (
+                      {meeting.topics?.slice(0, 3).map((topic, index) => (
                         <div key={index}>
                           <div className="flex justify-between text-sm mb-2">
                             <span className="font-medium">{topic.topic}</span>
@@ -310,7 +377,7 @@ export default function MeetingPage({
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {meeting.action_items?.slice(0, 3).map((item: any, index: number) => (
+                      {meeting.action_items?.slice(0, 3).map((item, index) => (
                         <div
                           key={index}
                           className="flex gap-3 rounded-lg border border-border/70 bg-muted/20 p-3"
@@ -352,7 +419,7 @@ export default function MeetingPage({
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {meeting.decisions?.slice(0, 3).map((decision: any, index: number) => (
+                      {meeting.decisions?.slice(0, 3).map((decision, index) => (
                         <div
                           key={index}
                           className="flex gap-3 rounded-lg border border-border/70 bg-muted/20 p-3"
@@ -407,7 +474,7 @@ export default function MeetingPage({
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {Object.entries(meeting.speaker_analysis).map(([speaker, data]: any) => {
+                        {Object.entries(meeting.speaker_analysis).map(([speaker, data]) => {
                           const participation = data.participation_percentage || 0;
                           return (
                             <div
@@ -462,7 +529,7 @@ export default function MeetingPage({
             {activeTab === "transcript" && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold font-heading mb-6">Full Transcript</h2>
-                {meeting.transcript?.map((item: any, index: number) => (
+                {meeting.transcript?.map((item, index) => (
                   <Card key={index} className="border-border/70 shadow-sm">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
@@ -486,7 +553,7 @@ export default function MeetingPage({
             {activeTab === "actionitems" && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold font-heading mb-6">All Action Items</h2>
-                {meeting.action_items?.map((item: any, index: number) => (
+                {meeting.action_items?.map((item, index) => (
                   <Card key={index} className="border-border/70 shadow-sm">
                     <CardContent className="p-5">
                       <div className="flex gap-4">
@@ -533,7 +600,7 @@ export default function MeetingPage({
             {activeTab === "insights" && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold font-heading mb-6">AI-Generated Insights</h2>
-                {meeting.ai_insights?.map((insight: string, index: number) => (
+                {meeting.ai_insights?.map((insight, index) => (
                   <Card key={index} className="border-border/70 shadow-sm">
                     <CardContent className="p-5">
                       <div className="flex gap-4">
@@ -554,19 +621,19 @@ export default function MeetingPage({
                 <h2 className="text-2xl font-semibold font-heading mb-6">Meeting Analytics</h2>
 
                 {/* Score Breakdown */}
-                {meeting.score && typeof meeting.score === 'object' && (
+                {scoreBreakdown && (
                   <Card className="border-border/70 shadow-sm">
                     <CardHeader>
                       <CardTitle>Score Breakdown</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {Object.entries(meeting.score)
-                        .filter(([key, value]) => typeof value === 'number')
-                        .map(([key, value]: [string, any]) => (
+                      {Object.entries(scoreBreakdown)
+                        .filter(isNumberEntry)
+                        .map(([key, value]) => (
                           <div key={key}>
                             <div className="flex justify-between text-sm mb-2">
                               <span className="font-medium capitalize">
-                                {key.replace(/_/g, ' ')}
+                                {key.replace(/_/g, " ")}
                               </span>
                               <span className="text-muted-foreground">
                                 {value.toFixed(2)} / 100
@@ -591,7 +658,7 @@ export default function MeetingPage({
                       <CardTitle>All Topics Discussed</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {meeting.topics.map((topic: any, index: number) => (
+                      {meeting.topics.map((topic, index) => (
                         <div key={index}>
                           <div className="flex justify-between text-sm mb-2">
                             <span className="font-medium">{topic.topic}</span>
@@ -619,7 +686,7 @@ export default function MeetingPage({
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-4 sm:grid-cols-2">
-                        {Object.entries(meeting.speaker_analysis).map(([speaker, data]: [string, any]) => (
+                        {Object.entries(meeting.speaker_analysis).map(([speaker, data]) => (
                           <div
                             key={speaker}
                             className="rounded-lg border border-border/70 bg-muted/20 p-4"

@@ -46,7 +46,13 @@ import { useState } from "react";
 import { loginUser, initiateGoogleLogin } from "@/lib/api";
 import { AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -65,7 +71,7 @@ export default function LoginPage() {
         localStorage.setItem("accessToken", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
 
-        // window.location.href = "/meet-addon/summaries"; // redirect disabled
+        window.location.href = "/meet-addon";
       } else {
         setError(data.error || "Login failed");
       }
@@ -144,9 +150,7 @@ export default function LoginPage() {
 
           {/* Email */}
           <div>
-            <label className="text-sm text-foreground block mb-2">
-              Email
-            </label>
+            <label className="text-sm text-foreground block mb-2">Email</label>
 
             <input
               type="email"
@@ -190,7 +194,7 @@ export default function LoginPage() {
           </Button>
 
           <Button
-            onClick={() => window.location.href = "/"}
+            onClick={() => (window.location.href = "/")}
             variant="outline"
             className="w-full"
             size="lg"

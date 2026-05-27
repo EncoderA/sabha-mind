@@ -7,8 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AudioLines, ArrowLeft, Sparkles } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
-
-const API_URL = "http://127.0.0.1:8000";
+import { getMeetingsApiUrl } from "@/lib/meetings-api";
 
 interface Topic {
   topic: string;
@@ -30,7 +29,7 @@ export default function MeetingsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${API_URL}/meetings`)
+    fetch(`${getMeetingsApiUrl()}/meetings`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch meetings");
         return res.json();

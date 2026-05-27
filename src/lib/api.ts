@@ -8,9 +8,7 @@ import type {
   TranscriptListItem,
 } from "@/lib/bot-api";
 
-const PUBLIC_IP = process.env.NEXT_PUBLIC_PUBLIC_IP || "127.0.0.1";
-const AUTH_BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL || `http://${PUBLIC_IP}:8000`;
+const AUTH_BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const API = axios.create({
   baseURL: AUTH_BACKEND_URL,

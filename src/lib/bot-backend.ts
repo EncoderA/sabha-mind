@@ -1,7 +1,11 @@
-const DEFAULT_BOT_BACKEND_URL = "http://65.2.158.83:3001";
-
 export function getBotBackendUrl() {
-  return process.env.NEXT_PUBLIC_BACKEND_URL ?? DEFAULT_BOT_BACKEND_URL;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  if (!backendUrl) {
+    throw new Error("NEXT_PUBLIC_BACKEND_URL is not configured");
+  }
+
+  return backendUrl;
 }
 
 export async function proxyBackendResponse(res: Response) {

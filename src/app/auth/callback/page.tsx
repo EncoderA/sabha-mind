@@ -13,7 +13,7 @@
 //   const [message, setMessage] = useState("Processing authentication...");
 
 //   useEffect(() => {
-//     const code = searchParams.get("code"); 
+//     const code = searchParams.get("code");
 //     const error = searchParams.get("error");
 
 //     if (error) {
@@ -36,10 +36,10 @@
 //         if (data.accessToken) {
 //           localStorage.setItem("accessToken", data.accessToken);
 //           localStorage.setItem("refreshToken", data.refreshToken);
-          
+
 //           setStatus("success");
 //           setMessage("Login successful! Redirecting...");
-          
+
 //           setTimeout(() => {
 //             window.location.href = "/meet-addon/summaries";
 //           }, 1500);
@@ -78,7 +78,7 @@
 //             {status === "loading" && (
 //               <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
 //             )}
-            
+
 //             {status === "success" && (
 //               <div className="size-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
 //                 <svg
@@ -96,7 +96,7 @@
 //                 </svg>
 //               </div>
 //             )}
-            
+
 //             {status === "error" && (
 //               <div className="size-12 rounded-full bg-destructive/10 flex items-center justify-center">
 //                 <svg
@@ -134,7 +134,9 @@ function GoogleCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
   const [message, setMessage] = useState("Processing authentication...");
 
   useEffect(() => {
@@ -168,9 +170,9 @@ function GoogleCallbackContent() {
           setStatus("success");
           setMessage("Login successful!");
 
-          // setTimeout(() => {
-          //   window.location.href = "/meet-addon/summaries"; // redirect disabled
-          // }, 1500);
+          setTimeout(() => {
+            router.push("/meet-addon");
+          }, 1500);
         } else {
           setStatus("error");
           setMessage(data.error || "Authentication failed");
