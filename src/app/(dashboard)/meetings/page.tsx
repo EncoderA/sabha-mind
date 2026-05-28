@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { 
   AudioLines, 
@@ -88,7 +88,6 @@ function formatMeetingDate(dateStr?: string) {
 
 export default function MeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [filteredMeetings, setFilteredMeetings] = useState<Meeting[]>([]);
   const [totalMeetings, setTotalMeetings] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -103,7 +102,6 @@ export default function MeetingsPage() {
       .then((data: unknown) => {
         const normalized = normalizeMeetingsResponse(data);
         setMeetings(normalized.meetings);
-        setFilteredMeetings(normalized.meetings);
         setTotalMeetings(normalized.total);
         setLoading(false);
       })
@@ -115,14 +113,13 @@ export default function MeetingsPage() {
   }, []);
 
   // Filter meetings based on search query
-  useEffect(() => {
+  const filteredMeetings = useMemo(() => {
     if (!searchQuery.trim()) {
-      setFilteredMeetings(meetings);
-      return;
+      return meetings;
     }
 
     const query = searchQuery.toLowerCase();
-    const filtered = meetings.filter((meeting) => {
+    return meetings.filter((meeting) => {
       const titleMatch = meeting.meeting_title.toLowerCase().includes(query);
       const summaryMatch = meeting.summary.toLowerCase().includes(query);
       const topicsMatch = meeting.topics?.some((topic) =>
@@ -130,8 +127,6 @@ export default function MeetingsPage() {
       );
       return titleMatch || summaryMatch || topicsMatch;
     });
-
-    setFilteredMeetings(filtered);
   }, [searchQuery, meetings]);
 
   if (loading) {

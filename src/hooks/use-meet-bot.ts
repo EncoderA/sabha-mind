@@ -102,7 +102,7 @@ export function useMeetBot(onTranscriptReady?: () => Promise<void>) {
                 );
             }
         },
-        [onTranscriptReady, phase]
+        [onTranscriptReady]
     );
 
     function handleStartRecording() {

@@ -23,7 +23,6 @@ export default function MeetAddOnPage() {
     }, []);
 
     const {
-        meetUrl,
         setMeetUrl,
         meetingCode,
         setMeetingCode,
