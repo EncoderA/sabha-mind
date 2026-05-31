@@ -242,23 +242,6 @@ Additional documentation is available in the project:
 - `GOOGLE_AUTH_SETUP.md` - Google authentication setup guide
 - `MEETINGS_UI_SUMMARY.md` - Meetings UI documentation
 
-## 🐛 Known Issues & Troubleshooting
-
-### Common Issues
-
-1. **Meeting not detected in add-on**
-   - Ensure you're using the add-on within an active Google Meet call
-   - Check that the add-on has necessary permissions
-
-2. **Transcription not starting**
-   - Verify API endpoints are configured correctly
-   - Check network connectivity
-   - Ensure bot has permission to join the meeting
-
-3. **Summaries not generating**
-   - Wait for transcription to complete
-   - Check API rate limits
-   - Verify AI processing service is running
 
 ## 📄 License
 
