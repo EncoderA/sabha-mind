@@ -580,7 +580,6 @@ export default function MeetingsPage() {
                         }
                       }}
                       numberOfMonths={2}
-                      initialFocus
                     />
                   </div>
                   <div className="border-t border-border/70 p-2 flex justify-between bg-muted/10">
