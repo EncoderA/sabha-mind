@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { normalizeTranscriptList, type TranscriptListItem } from '@/lib/bot-api';
 import { getAllTranscripts } from '@/lib/api';
-import { StatusBadge, MeetingInfoCard, RecordingControl, RecentTranscripts } from '@/components/meet-bot';
+import { MeetBotPanel } from '@/features/add-on/components/meet-bot-panel';
 import { useMeetBot } from '@/hooks/use-meet-bot';
 import { useMeetAddon } from './meet-addon-provider';
 
@@ -97,55 +97,23 @@ export default function MeetAddOnPage() {
     }, [sidePanelClient, setMeetingCode, setMeetUrl]);
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4">
-            <StatusBadge
-                phase={phase}
-                jobStatus={jobStatus}
-                isReady={isReady}
-                hasMeeting={hasMeeting}
-                isApiPending={isApiPending}
-            />
-
-            <section className="space-y-1">
-                <h1 className="text-lg font-semibold tracking-tight">
-                    {isRecording ? 'Bot is active' : 'Start meeting bot'}
-                </h1>
-                <p className="text-[13px] leading-relaxed text-muted-foreground">
-                    {statusNote}
-                </p>
-            </section>
-
-            <MeetingInfoCard
-                meetingCode={meetingCode}
-                errorMessage={meetErrorMessage}
-            />
-
-            <div className="flex flex-col gap-2">
-                <RecordingControl
-                    isRecording={isRecording}
-                    isApiPending={isApiPending}
-                    isProcessing={isProcessing}
-                    hasMeeting={hasMeeting}
-                    isReady={isReady}
-                    onStart={handleStartRecording}
-                    onStop={handleStopRecording}
-                />
-            </div>
-
-            {apiErrorMessage ? (
-                <div
-                    className="rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2.5 text-[13px] text-destructive"
-                    role="alert"
-                >
-                    {apiErrorMessage}
-                </div>
-            ) : null}
-
-            <RecentTranscripts
-                transcripts={transcripts}
-                isLoading={isLoadingTranscripts}
-                basePath="/meet-addon/transcripts"
-            />
-        </div>
+        <MeetBotPanel
+            phase={phase}
+            jobStatus={jobStatus}
+            isReady={isReady}
+            hasMeeting={hasMeeting}
+            isApiPending={isApiPending}
+            statusNote={statusNote}
+            meetingCode={meetingCode}
+            meetErrorMessage={meetErrorMessage}
+            isRecording={isRecording}
+            isProcessing={isProcessing}
+            onStart={handleStartRecording}
+            onStop={handleStopRecording}
+            apiErrorMessage={apiErrorMessage}
+            transcripts={transcripts}
+            isLoadingTranscripts={isLoadingTranscripts}
+            basePath="/meet-addon/transcripts"
+        />
     );
 }

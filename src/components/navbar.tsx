@@ -18,7 +18,6 @@ import { ThemeSwitch } from "@/components/theme-switch";
 
 const navItems = [
   { name: "Platform", link: "#platform" },
-  { name: "Add-on", link: "/meet-addon" },
   { name: "AI-Summary", link: "/meetings" },
 ] as const;
 
@@ -35,7 +34,7 @@ export default function Navbar() {
         <NavbarLogo />
         <NavItems items={[...navItems]} />
         <div className="relative z-20 flex items-center gap-2">
-          <ThemeSwitch enableShortcut={false} className="size-9" />
+          <ThemeSwitch enableShortcut={true} className="size-9" />
           <NavbarButton as={Link} href="/login" variant="secondary">
             Sign In
           </NavbarButton>
