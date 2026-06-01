@@ -391,8 +391,10 @@ export default function MeetingsPage() {
       {/* Search and Filter Bar */}
       {meetings.length > 0 && (
         <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-md">
+          {/* Search and Filters Row */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {/* Search Bar - Expands to fill space */}
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
@@ -402,11 +404,59 @@ export default function MeetingsPage() {
                 className="w-full rounded-lg border border-border/70 bg-muted/20 py-2 pl-9 pr-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:bg-muted/30 focus-visible:border-primary/40 focus-visible:ring-3 focus-visible:ring-primary/15"
               />
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Filters - Compact row */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Sort Dropdown */}
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                <SelectTrigger className="w-[140px] h-9 text-[13px] border-border/70">
+                  <ArrowUpDown className="size-3.5 mr-1.5" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date-desc">
+                    <div className="flex items-center gap-2">
+                      <ArrowDown className="size-3.5" />
+                      Newest First
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="date-asc">
+                    <div className="flex items-center gap-2">
+                      <ArrowUp className="size-3.5" />
+                      Oldest First
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="participants-desc">
+                    <div className="flex items-center gap-2">
+                      <Users className="size-3.5" />
+                      Most Participants
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="participants-asc">
+                    <div className="flex items-center gap-2">
+                      <Users className="size-3.5" />
+                      Least Participants
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="duration-desc">
+                    <div className="flex items-center gap-2">
+                      <Clock className="size-3.5" />
+                      Longest First
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="duration-asc">
+                    <div className="flex items-center gap-2">
+                      <Clock className="size-3.5" />
+                      Shortest First
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* Participant Filter */}
               <Select value={participantFilter} onValueChange={setParticipantFilter}>
-                <SelectTrigger className="w-[140px] h-9 text-[13px]">
-                  <Filter className="size-3.5 mr-1.5" />
+                <SelectTrigger className="w-[130px] h-9 text-[13px] border-border/70">
+                  <Users className="size-3.5 mr-1.5" />
                   <SelectValue placeholder="Participants" />
                 </SelectTrigger>
                 <SelectContent>
@@ -417,6 +467,21 @@ export default function MeetingsPage() {
                 </SelectContent>
               </Select>
 
+              {/* Duration Filter */}
+              <Select value={durationFilter} onValueChange={setDurationFilter}>
+                <SelectTrigger className="w-[120px] h-9 text-[13px] border-border/70">
+                  <Timer className="size-3.5 mr-1.5" />
+                  <SelectValue placeholder="Duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Durations</SelectItem>
+                  <SelectItem value="short">Short (&lt; 15 min)</SelectItem>
+                  <SelectItem value="medium">Medium (15-45 min)</SelectItem>
+                  <SelectItem value="long">Long (45-90 min)</SelectItem>
+                  <SelectItem value="verylong">Very Long (90+ min)</SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* Date Range Picker */}
               <Popover>
                 <PopoverTrigger asChild>
@@ -424,8 +489,8 @@ export default function MeetingsPage() {
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "gap-2 text-[13px] h-9",
-                      dateRange.from && "text-primary"
+                      "gap-2 text-[13px] h-9 border-border/70 w-[140px]",
+                      dateRange.from && "text-primary border-primary/40"
                     )}
                   >
                     <CalendarIcon className="size-3.5" />
@@ -436,33 +501,94 @@ export default function MeetingsPage() {
                           {dateRange.to.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </>
                       ) : (
-                        dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                        dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric" })
                       )
                     ) : (
                       "Date Range"
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="range"
-                    selected={{ from: dateRange.from, to: dateRange.to }}
-                    onSelect={(range) => {
-                      if (range) {
-                        setDateRange({ from: range.from, to: range.to });
-                      } else {
-                        setDateRange({ from: undefined, to: undefined });
-                      }
-                    }}
-                    numberOfMonths={2}
-                    initialFocus
-                  />
-                  <div className="border-t p-3 flex justify-between">
+                <PopoverContent className="w-auto p-0 max-w-[min(90vw,800px)]" align="end" sideOffset={8}>
+                  {/* Quick Date Presets */}
+                  <div className="border-b border-border/70 p-3 bg-muted/20">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                      Quick Select
+                    </p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDateRange(getQuickDateRange("today"))}
+                        className="h-7 text-[10px] border-border/60 px-2"
+                      >
+                        <Zap className="size-2.5 mr-1" />
+                        Today
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDateRange(getQuickDateRange("yesterday"))}
+                        className="h-7 text-[10px] border-border/60 px-2"
+                      >
+                        Yesterday
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDateRange(getQuickDateRange("last7"))}
+                        className="h-7 text-[10px] border-border/60 px-2"
+                      >
+                        Last 7 Days
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDateRange(getQuickDateRange("thisWeek"))}
+                        className="h-7 text-[10px] border-border/60 px-2"
+                      >
+                        This Week
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDateRange(getQuickDateRange("last30"))}
+                        className="h-7 text-[10px] border-border/60 px-2"
+                      >
+                        Last 30 Days
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDateRange(getQuickDateRange("thisMonth"))}
+                        className="h-7 text-[10px] border-border/60 px-2"
+                      >
+                        This Month
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Calendar */}
+                  <div className="p-3">
+                    <Calendar
+                      mode="range"
+                      selected={{ from: dateRange.from, to: dateRange.to }}
+                      onSelect={(range) => {
+                        if (range) {
+                          setDateRange({ from: range.from, to: range.to });
+                        } else {
+                          setDateRange({ from: undefined, to: undefined });
+                        }
+                      }}
+                      numberOfMonths={2}
+                      initialFocus
+                    />
+                  </div>
+                  <div className="border-t border-border/70 p-2 flex justify-between bg-muted/10">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setDateRange({ from: undefined, to: undefined })}
-                      className="text-[12px]"
+                      className="text-[11px] h-7"
                     >
                       Clear
                     </Button>
@@ -475,29 +601,47 @@ export default function MeetingsPage() {
           {/* Active Filters Display */}
           {hasActiveFilters && (
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[12px] text-muted-foreground">Active filters:</span>
+              <span className="text-[12px] font-medium text-muted-foreground">Active filters:</span>
               {participantFilter !== "all" && (
-                <div className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1 text-[11px] font-medium">
-                  <Users className="size-3" />
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-muted/50">
+                  <Users className="size-3 text-primary" />
                   {participantFilter === "1-3" && "1-3 People"}
                   {participantFilter === "4-10" && "4-10 People"}
                   {participantFilter === "11+" && "11+ People"}
                   <button
                     onClick={() => setParticipantFilter("all")}
-                    className="ml-1 hover:text-foreground"
+                    className="ml-0.5 hover:text-foreground transition-colors"
+                    aria-label="Remove participant filter"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              )}
+              {durationFilter !== "all" && (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-muted/50">
+                  <Timer className="size-3 text-amber-600 dark:text-amber-400" />
+                  {durationFilter === "short" && "Short"}
+                  {durationFilter === "medium" && "Medium"}
+                  {durationFilter === "long" && "Long"}
+                  {durationFilter === "verylong" && "Very Long"}
+                  <button
+                    onClick={() => setDurationFilter("all")}
+                    className="ml-0.5 hover:text-foreground transition-colors"
+                    aria-label="Remove duration filter"
                   >
                     <X className="size-3" />
                   </button>
                 </div>
               )}
               {dateRange.from && (
-                <div className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1 text-[11px] font-medium">
-                  <CalendarIcon className="size-3" />
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-muted/50">
+                  <CalendarIcon className="size-3 text-emerald-600 dark:text-emerald-400" />
                   {dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   {dateRange.to && ` - ${dateRange.to.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
                   <button
                     onClick={() => setDateRange({ from: undefined, to: undefined })}
-                    className="ml-1 hover:text-foreground"
+                    className="ml-0.5 hover:text-foreground transition-colors"
+                    aria-label="Remove date filter"
                   >
                     <X className="size-3" />
                   </button>
@@ -507,8 +651,9 @@ export default function MeetingsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={clearFilters}
-                className="h-7 text-[11px] px-2"
+                className="h-7 text-[11px] px-2 hover:bg-destructive/10 hover:text-destructive"
               >
+                <X className="size-3 mr-1" />
                 Clear all
               </Button>
             </div>
@@ -517,7 +662,7 @@ export default function MeetingsPage() {
       )}
 
       {/* Meetings Grid */}
-      {filteredMeetings.length === 0 ? (
+      {filteredAndSortedMeetings.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 py-12">
           {searchQuery ? (
             <>
@@ -565,8 +710,8 @@ export default function MeetingsPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredMeetings.map((meeting) => {
-            const duration = Math.floor(meeting.transcript_length / 150);
+          {filteredAndSortedMeetings.map((meeting) => {
+            const duration = Math.floor(meeting.transcript_length / WORDS_PER_MINUTE);
             const dateStr = meeting.created_at || meeting.date;
             const formattedDate = formatMeetingDate(dateStr);
 
