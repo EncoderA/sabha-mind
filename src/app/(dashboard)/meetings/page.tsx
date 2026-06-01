@@ -6,7 +6,7 @@ import {
   AudioLines, 
   Search, 
   Filter, 
-  Calendar,
+  Calendar as CalendarIcon,
   Users,
   Clock,
   FileText,
@@ -14,11 +14,27 @@ import {
   LoaderCircle,
   Sparkles,
   TrendingUp,
+  X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Timer,
+  Zap,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getMeetingsApiUrl } from "@/lib/meetings-api";
+import { cn } from "@/lib/utils";
 
 interface Topic {
   topic: string;
@@ -86,12 +102,25 @@ function formatMeetingDate(dateStr?: string) {
   return meetingDateFormatter.format(date);
 }
 
+type DateRange = {
+  from: Date | undefined;
+  to?: Date | undefined;
+};
+
+type SortOption = "date-desc" | "date-asc" | "participants-desc" | "participants-asc" | "duration-desc" | "duration-asc";
+
+const WORDS_PER_MINUTE = 150;
+
 export default function MeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [totalMeetings, setTotalMeetings] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [participantFilter, setParticipantFilter] = useState<string>("all");
+  const [durationFilter, setDurationFilter] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<DateRange>({ from: undefined, to: undefined });
+  const [sortBy, setSortBy] = useState<SortOption>("date-desc");
 
   useEffect(() => {
     fetch(`${getMeetingsApiUrl()}/meetings`)
@@ -112,22 +141,140 @@ export default function MeetingsPage() {
       });
   }, []);
 
-  // Filter meetings based on search query
-  const filteredMeetings = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return meetings;
+  // Helper function to get quick date ranges
+  const getQuickDateRange = (preset: string): DateRange => {
+    const today = new Date();
+    const from = new Date();
+    
+    switch (preset) {
+      case "today":
+        from.setHours(0, 0, 0, 0);
+        return { from, to: new Date() };
+      case "yesterday":
+        from.setDate(today.getDate() - 1);
+        from.setHours(0, 0, 0, 0);
+        const yesterday = new Date(from);
+        yesterday.setHours(23, 59, 59, 999);
+        return { from, to: yesterday };
+      case "last7":
+        from.setDate(today.getDate() - 7);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: new Date() };
+      case "last30":
+        from.setDate(today.getDate() - 30);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: new Date() };
+      case "thisWeek":
+        const dayOfWeek = today.getDay();
+        const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        from.setDate(diff);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: new Date() };
+      case "thisMonth":
+        from.setDate(1);
+        from.setHours(0, 0, 0, 0);
+        return { from, to: new Date() };
+      default:
+        return { from: undefined, to: undefined };
     }
+  };
 
-    const query = searchQuery.toLowerCase();
-    return meetings.filter((meeting) => {
-      const titleMatch = meeting.meeting_title.toLowerCase().includes(query);
-      const summaryMatch = meeting.summary.toLowerCase().includes(query);
-      const topicsMatch = meeting.topics?.some((topic) =>
-        topic.topic.toLowerCase().includes(query)
-      );
-      return titleMatch || summaryMatch || topicsMatch;
+  // Filter and sort meetings
+  const filteredAndSortedMeetings = useMemo(() => {
+    // First, filter meetings
+    let filtered = meetings.filter((meeting) => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const titleMatch = meeting.meeting_title.toLowerCase().includes(query);
+        const summaryMatch = meeting.summary.toLowerCase().includes(query);
+        const topicsMatch = meeting.topics?.some((topic) =>
+          topic.topic.toLowerCase().includes(query)
+        );
+        if (!titleMatch && !summaryMatch && !topicsMatch) {
+          return false;
+        }
+      }
+
+      // Participant count filter
+      if (participantFilter !== "all") {
+        const count = meeting.participant_count || 0;
+        if (participantFilter === "1-3" && (count < 1 || count > 3)) return false;
+        if (participantFilter === "4-10" && (count < 4 || count > 10)) return false;
+        if (participantFilter === "11+" && count < 11) return false;
+      }
+
+      // Duration filter
+      if (durationFilter !== "all") {
+        const duration = Math.floor((meeting.transcript_length || 0) / WORDS_PER_MINUTE);
+        if (durationFilter === "short" && duration >= 15) return false;
+        if (durationFilter === "medium" && (duration < 15 || duration >= 45)) return false;
+        if (durationFilter === "long" && (duration < 45 || duration >= 90)) return false;
+        if (durationFilter === "verylong" && duration < 90) return false;
+      }
+
+      // Date range filter
+      if (dateRange.from) {
+        const meetingDate = new Date(meeting.created_at || meeting.date || "");
+        if (isNaN(meetingDate.getTime())) return true;
+        
+        const fromDate = new Date(dateRange.from);
+        fromDate.setHours(0, 0, 0, 0);
+        
+        if (meetingDate < fromDate) return false;
+        
+        if (dateRange.to) {
+          const toDate = new Date(dateRange.to);
+          toDate.setHours(23, 59, 59, 999);
+          if (meetingDate > toDate) return false;
+        }
+      }
+
+      return true;
     });
-  }, [searchQuery, meetings]);
+
+    // Then, sort meetings
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "date-desc": {
+          const dateA = new Date(a.created_at || a.date || 0).getTime();
+          const dateB = new Date(b.created_at || b.date || 0).getTime();
+          return dateB - dateA;
+        }
+        case "date-asc": {
+          const dateA = new Date(a.created_at || a.date || 0).getTime();
+          const dateB = new Date(b.created_at || b.date || 0).getTime();
+          return dateA - dateB;
+        }
+        case "participants-desc":
+          return (b.participant_count || 0) - (a.participant_count || 0);
+        case "participants-asc":
+          return (a.participant_count || 0) - (b.participant_count || 0);
+        case "duration-desc":
+          return (b.transcript_length || 0) - (a.transcript_length || 0);
+        case "duration-asc":
+          return (a.transcript_length || 0) - (b.transcript_length || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [searchQuery, meetings, participantFilter, durationFilter, dateRange, sortBy]);
+
+  // Check if any filters are active
+  const hasActiveFilters = 
+    participantFilter !== "all" || 
+    durationFilter !== "all" || 
+    dateRange.from !== undefined;
+
+  // Clear all filters
+  const clearFilters = () => {
+    setParticipantFilter("all");
+    setDurationFilter("all");
+    setDateRange({ from: undefined, to: undefined });
+    setSortBy("date-desc");
+  };
 
   if (loading) {
     return (
@@ -243,27 +390,129 @@ export default function MeetingsPage() {
 
       {/* Search and Filter Bar */}
       {meetings.length > 0 && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search meetings, topics, or summaries..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-border/70 bg-muted/20 py-2 pl-9 pr-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:bg-muted/30 focus-visible:border-primary/40 focus-visible:ring-3 focus-visible:ring-primary/15"
-            />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search meetings, topics, or summaries..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-border/70 bg-muted/20 py-2 pl-9 pr-3 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/60 focus:bg-muted/30 focus-visible:border-primary/40 focus-visible:ring-3 focus-visible:ring-primary/15"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Participant Filter */}
+              <Select value={participantFilter} onValueChange={setParticipantFilter}>
+                <SelectTrigger className="w-[140px] h-9 text-[13px]">
+                  <Filter className="size-3.5 mr-1.5" />
+                  <SelectValue placeholder="Participants" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Participants</SelectItem>
+                  <SelectItem value="1-3">1-3 People</SelectItem>
+                  <SelectItem value="4-10">4-10 People</SelectItem>
+                  <SelectItem value="11+">11+ People</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Date Range Picker */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "gap-2 text-[13px] h-9",
+                      dateRange.from && "text-primary"
+                    )}
+                  >
+                    <CalendarIcon className="size-3.5" />
+                    {dateRange.from ? (
+                      dateRange.to ? (
+                        <>
+                          {dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric" })} -{" "}
+                          {dateRange.to.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </>
+                      ) : (
+                        dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                      )
+                    ) : (
+                      "Date Range"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="range"
+                    selected={{ from: dateRange.from, to: dateRange.to }}
+                    onSelect={(range) => {
+                      if (range) {
+                        setDateRange({ from: range.from, to: range.to });
+                      } else {
+                        setDateRange({ from: undefined, to: undefined });
+                      }
+                    }}
+                    numberOfMonths={2}
+                    initialFocus
+                  />
+                  <div className="border-t p-3 flex justify-between">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDateRange({ from: undefined, to: undefined })}
+                      className="text-[12px]"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="size-3.5" />
-              Filter
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Calendar className="size-3.5" />
-              Date
-            </Button>
-          </div>
+
+          {/* Active Filters Display */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[12px] text-muted-foreground">Active filters:</span>
+              {participantFilter !== "all" && (
+                <div className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1 text-[11px] font-medium">
+                  <Users className="size-3" />
+                  {participantFilter === "1-3" && "1-3 People"}
+                  {participantFilter === "4-10" && "4-10 People"}
+                  {participantFilter === "11+" && "11+ People"}
+                  <button
+                    onClick={() => setParticipantFilter("all")}
+                    className="ml-1 hover:text-foreground"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              )}
+              {dateRange.from && (
+                <div className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1 text-[11px] font-medium">
+                  <CalendarIcon className="size-3" />
+                  {dateRange.from.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  {dateRange.to && ` - ${dateRange.to.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                  <button
+                    onClick={() => setDateRange({ from: undefined, to: undefined })}
+                    className="ml-1 hover:text-foreground"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-7 text-[11px] px-2"
+              >
+                Clear all
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -305,12 +554,12 @@ export default function MeetingsPage() {
                   Google Meet to generate AI-powered summaries.
                 </p>
               </div>
-              <Button size="sm" className="gap-2">
-                <Link href="/meet-bot">
+              <Link href="/meet-bot">
+                <Button size="sm" className="gap-2">
                   <Sparkles className="size-3.5" />
                   Start Recording
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </>
           )}
         </div>
