@@ -1,10 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { registerUser, initiateGoogleLogin } from "@/lib/api";
+import { useGoogleLogin } from "@react-oauth/google";
+import { registerUser, loginWithGoogleProfile } from "@/lib/api";
 import { AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -12,6 +19,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleRegister = async () => {
     try {
@@ -35,9 +43,42 @@ export default function RegisterPage() {
     }
   };
 
-  const handleGoogleSignup = () => {
-    initiateGoogleLogin();
-  };
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        setGoogleLoading(true);
+        setError("");
+
+        // 1. Fetch user profile from Google using the access token
+        const userInfo = await fetch(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          },
+        ).then((res) => res.json());
+
+        // 2. Send the profile to the backend (creates or logs in the account)
+        const backendResponse = await loginWithGoogleProfile({
+          googleId: userInfo.sub,
+          email: userInfo.email,
+          name: userInfo.name,
+          picture: userInfo.picture,
+        });
+
+        // 3. Save tokens and redirect
+        localStorage.setItem("accessToken", backendResponse.accessToken);
+        localStorage.setItem("refreshToken", backendResponse.refreshToken);
+        window.location.href = "/meet-addon";
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Google sign-up failed",
+        );
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    onError: () => setError("Google sign-in was cancelled or failed"),
+  });
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
@@ -63,7 +104,8 @@ export default function RegisterPage() {
         <CardContent className="space-y-5">
           {/* Google Signup Button */}
           <Button
-            onClick={handleGoogleSignup}
+            onClick={() => googleLogin()}
+            disabled={googleLoading}
             variant="outline"
             className="w-full"
             size="lg"
@@ -86,7 +128,7 @@ export default function RegisterPage() {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            Continue with Google
+            {googleLoading ? "Signing in..." : "Continue with Google"}
           </Button>
 
           {/* Divider */}
@@ -156,7 +198,7 @@ export default function RegisterPage() {
           </Button>
 
           <Button
-            onClick={() => window.location.href = "/"}
+            onClick={() => (window.location.href = "/")}
             variant="outline"
             className="w-full"
             size="lg"

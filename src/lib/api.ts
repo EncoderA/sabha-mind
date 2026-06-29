@@ -14,7 +14,6 @@ const API = axios.create({
 });
 
 const BASE_URL = AUTH_BACKEND_URL;
-const USE_MOCK_AUTH = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === "true";
 
 type RequestOptions = {
   body?: unknown;
@@ -93,30 +92,26 @@ export async function loginUser(email: string, password: string) {
   return res.json();
 }
 
-export function initiateGoogleLogin() {
-  if (USE_MOCK_AUTH) {
-    window.location.href = "/api/auth/google";
-    return;
+export async function loginWithGoogleProfile(profile: {
+  googleId: string;
+  email: string;
+  name?: string;
+  picture?: string;
+}) {
+  const res = await fetch(`${BASE_URL}/auth/google`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(profile),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || "Google login failed");
   }
 
-  window.location.href = `${BASE_URL}/auth/google`;
-}
-
-export async function handleGoogleCallback(code: string) {
-  if (USE_MOCK_AUTH) {
-    const res = await fetch(`/api/auth/google/callback?code=${code}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return res.json();
-  }
-
-  return {
-    accessToken: code,
-    refreshToken: "",
-  };
+  return res.json() as Promise<{ user: unknown; accessToken: string; refreshToken: string }>;
 }
 
 // Recording bot APIs via Next.js proxy (avoids CORS in Meet add-on iframe)
