@@ -1,13 +1,11 @@
 "use client";
 
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <GoogleOAuthProvider
-      clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ""}
-    >
+    <SessionProvider>
       <ThemeProvider
         attribute="class"
         defaultTheme="system"
@@ -16,6 +14,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         {children}
       </ThemeProvider>
-    </GoogleOAuthProvider>
+    </SessionProvider>
   );
 }

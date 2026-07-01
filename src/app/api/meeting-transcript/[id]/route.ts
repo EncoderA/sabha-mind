@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { getBotBackendUrl } from "@/lib/bot-backend";
+import { getBotBackendUrl, getAuthHeaders } from "@/lib/bot-backend";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const params = await context.params;
     const res = await fetch(`${getBotBackendUrl()}/meeting-transcript/${params.id}`, {
       method: "GET",
+      headers: await getAuthHeaders(),
     });
     
     const data = await res.json();

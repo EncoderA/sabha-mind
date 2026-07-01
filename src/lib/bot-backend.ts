@@ -1,3 +1,6 @@
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
+
 export function getBotBackendUrl() {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -6,6 +9,12 @@ export function getBotBackendUrl() {
   }
 
   return backendUrl;
+}
+
+export async function getAuthHeaders(): Promise<HeadersInit> {
+  const session = await getServerSession(authOptions);
+  const token = (session as any)?.accessToken;
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export async function proxyBackendResponse(res: Response) {

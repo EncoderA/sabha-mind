@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getBotBackendUrl } from "@/lib/bot-backend";
+import { getBotBackendUrl, getAuthHeaders } from "@/lib/bot-backend";
 
 export async function GET(
   request: Request,
@@ -10,6 +10,7 @@ export async function GET(
     const params = await context.params;
     const res = await fetch(`${getBotBackendUrl()}/transcript/${params.id}`, {
       method: "GET",
+      headers: await getAuthHeaders(),
     });
 
     const contentType = res.headers.get("Content-Type");

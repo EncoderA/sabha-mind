@@ -48,12 +48,7 @@ async function requestJson<T>(path: string, options: RequestOptions = {}) {
   const response = await fetch(path, {
     cache: "no-store",
     method: options.method ?? "GET",
-    headers:
-      options.body === undefined
-        ? undefined
-        : {
-            "Content-Type": "application/json",
-          },
+    headers: options.body === undefined ? undefined : { "Content-Type": "application/json" },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
 
@@ -150,7 +145,9 @@ export function getMeetingTranscript(meetingId: string) {
 export async function getTranscriptDirect(meetingId: string) {
   const response = await fetch(
     `/api/transcripts/${encodeURIComponent(meetingId)}`,
-    { cache: "no-store" },
+    { 
+      cache: "no-store"
+    },
   );
 
   const contentType = response.headers.get("Content-Type") ?? "";

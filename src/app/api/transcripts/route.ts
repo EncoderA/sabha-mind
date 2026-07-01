@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { getBotBackendUrl, proxyBackendResponse } from "@/lib/bot-backend";
+import { getBotBackendUrl, proxyBackendResponse, getAuthHeaders } from "@/lib/bot-backend";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const res = await fetch(`${getBotBackendUrl()}/transcripts`, {
       method: "GET",
+      headers: await getAuthHeaders(),
     });
 
     return proxyBackendResponse(res);

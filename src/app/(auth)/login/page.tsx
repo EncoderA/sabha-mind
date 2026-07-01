@@ -1,8 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { useGoogleLogin } from "@react-oauth/google";
-import { loginUser, loginWithGoogleProfile } from "@/lib/api";
+import { signIn } from "next-auth/react";
 import { AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,15 +24,16 @@ export default function LoginPage() {
       setLoading(true);
       setError("");
 
-      const data = await loginUser(email, password);
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
 
-      if (data.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-
-        window.location.href = "/meet-addon";
+      if (res?.error) {
+        setError(res.error);
       } else {
-        setError(data.error || "Login failed");
+        window.location.href = "/meet-addon";
       }
     } catch {
       setError("Something went wrong");
@@ -42,42 +42,19 @@ export default function LoginPage() {
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setGoogleLoading(true);
-        setError("");
-
-        // 1. Fetch user profile from Google using the access token
-        const userInfo = await fetch(
-          "https://www.googleapis.com/oauth2/v3/userinfo",
-          {
-            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          },
-        ).then((res) => res.json());
-
-        // 2. Send the profile to the backend
-        const backendResponse = await loginWithGoogleProfile({
-          googleId: userInfo.sub,
-          email: userInfo.email,
-          name: userInfo.name,
-          picture: userInfo.picture,
-        });
-
-        // 3. Save tokens and redirect
-        localStorage.setItem("accessToken", backendResponse.accessToken);
-        localStorage.setItem("refreshToken", backendResponse.refreshToken);
-        window.location.href = "/meet-addon";
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Google login failed",
-        );
-      } finally {
-        setGoogleLoading(false);
-      }
-    },
-    onError: () => setError("Google sign-in was cancelled or failed"),
-  });
+  const googleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      setError("");
+      await signIn("google", { callbackUrl: "/meet-addon" });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Google login failed",
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">

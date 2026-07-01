@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getBotBackendUrl, proxyBackendResponse } from "@/lib/bot-backend";
+import { getBotBackendUrl, proxyBackendResponse, getAuthHeaders } from "@/lib/bot-backend";
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +9,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(await getAuthHeaders()),
       },
       body: JSON.stringify(body),
     });

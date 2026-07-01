@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { proxyBackendResponse } from "@/lib/bot-backend";
+import { proxyBackendResponse, getAuthHeaders } from "@/lib/bot-backend";
 import { getMeetingsBackendUrl } from "@/lib/meetings-backend";
 
 export async function GET(
@@ -17,6 +17,7 @@ export async function GET(
       method: "GET",
       headers: {
         Accept: request.headers.get("Accept") ?? "application/json",
+        ...(await getAuthHeaders()),
       },
       cache: "no-store",
     });

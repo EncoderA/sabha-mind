@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getBotBackendUrl, proxyBackendResponse } from "@/lib/bot-backend";
+import { getBotBackendUrl, proxyBackendResponse, getAuthHeaders } from "@/lib/bot-backend";
 
 export async function GET(
   request: Request,
@@ -12,6 +12,7 @@ export async function GET(
       `${getBotBackendUrl()}/job/${encodeURIComponent(jobId)}`,
       {
         method: "GET",
+        headers: await getAuthHeaders(),
         cache: "no-store",
       }
     );

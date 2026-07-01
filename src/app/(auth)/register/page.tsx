@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { useGoogleLogin } from "@react-oauth/google";
-import { registerUser, loginWithGoogleProfile } from "@/lib/api";
+import { signIn } from "next-auth/react";
+import { registerUser } from "@/lib/api";
 import { AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,8 +31,18 @@ export default function RegisterPage() {
 
       if (data.message) {
         setSuccess("Registered successfully");
-        setEmail("");
-        setPassword("");
+        // Auto-login
+        const res = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+
+        if (res?.error) {
+          setError(res.error);
+        } else {
+          window.location.href = "/meet-addon";
+        }
       } else {
         setError(data.error || "Registration failed");
       }
@@ -43,42 +53,19 @@ export default function RegisterPage() {
     }
   };
 
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        setGoogleLoading(true);
-        setError("");
-
-        // 1. Fetch user profile from Google using the access token
-        const userInfo = await fetch(
-          "https://www.googleapis.com/oauth2/v3/userinfo",
-          {
-            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          },
-        ).then((res) => res.json());
-
-        // 2. Send the profile to the backend (creates or logs in the account)
-        const backendResponse = await loginWithGoogleProfile({
-          googleId: userInfo.sub,
-          email: userInfo.email,
-          name: userInfo.name,
-          picture: userInfo.picture,
-        });
-
-        // 3. Save tokens and redirect
-        localStorage.setItem("accessToken", backendResponse.accessToken);
-        localStorage.setItem("refreshToken", backendResponse.refreshToken);
-        window.location.href = "/meet-addon";
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Google sign-up failed",
-        );
-      } finally {
-        setGoogleLoading(false);
-      }
-    },
-    onError: () => setError("Google sign-in was cancelled or failed"),
-  });
+  const googleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      setError("");
+      await signIn("google", { callbackUrl: "/meet-addon" });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Google sign-up failed",
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
